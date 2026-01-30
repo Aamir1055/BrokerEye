@@ -86,7 +86,6 @@ export default function Client2Module() {
       setCardOrder(newOrder)
       try { 
         localStorage.setItem(CARD_ORDER_KEY, JSON.stringify(newOrder)) 
-        console.log('Card order swapped:', fromLabel, '->', toLabel, newOrder)
       } catch (e) {
         console.error('Failed to save card order:', e)
       }
@@ -268,24 +267,24 @@ export default function Client2Module() {
       if (activeGroupName && groups && groups.length > 0) {
         const activeGroup = groups.find(g => g.name === activeGroupName)
         if (activeGroup) {
-          console.log('[Client2] Group filter active:', activeGroupName, activeGroup)
+          
           if (activeGroup.range) {
             // Range-based group
             payload.accountRangeMin = activeGroup.range.from
             payload.accountRangeMax = activeGroup.range.to
-            console.log('[Client2] Applied range filter:', payload.accountRangeMin, '-', payload.accountRangeMax)
+            
           } else if (activeGroup.loginIds && activeGroup.loginIds.length > 0) {
             // Manual selection group - store accounts for potential IB intersection
             groupAccountsSet = new Set(activeGroup.loginIds.map(id => String(id)))
             payload.mt5Accounts = Array.from(groupAccountsSet)
-            console.log('[Client2] Applied manual group filter:', payload.mt5Accounts.length, 'accounts')
+            
           }
         }
       }
 
       // Add IB filter to payload if active
       if (selectedIB && ibMT5Accounts && ibMT5Accounts.length > 0) {
-        console.log('[Client2] IB filter active:', selectedIB, 'with', ibMT5Accounts.length, 'accounts')
+        
         const ibAccountsSet = new Set(ibMT5Accounts.map(id => String(id)))
         
         if (payload.accountRangeMin !== undefined && payload.accountRangeMax !== undefined) {
@@ -299,7 +298,7 @@ export default function Client2Module() {
               return numId >= rangeMin && numId <= rangeMax
             })
             .map(id => String(id))
-          console.log('[Client2] Range + IB intersection:', beforeCount, '→', payload.mt5Accounts.length, 'accounts')
+          
           // Remove range params since we're using explicit account list
           delete payload.accountRangeMin
           delete payload.accountRangeMax
@@ -307,7 +306,7 @@ export default function Client2Module() {
           // If no intersection, force empty result by using impossible account
           if (payload.mt5Accounts.length === 0) {
             payload.mt5Accounts = ['0'] // Use impossible account ID to force empty result
-            console.log('[Client2] No intersection - forcing empty result')
+            
           }
         } else if (groupAccountsSet) {
           // Manual selection group + IB filter: Intersect both sets
@@ -315,17 +314,17 @@ export default function Client2Module() {
           payload.mt5Accounts = ibMT5Accounts
             .filter(id => groupAccountsSet.has(String(id)))
             .map(id => String(id))
-          console.log('[Client2] Manual group + IB intersection:', beforeCount, '→', payload.mt5Accounts.length, 'accounts')
+          
           
           // If no intersection, force empty result by using impossible account
           if (payload.mt5Accounts.length === 0) {
             payload.mt5Accounts = ['0'] // Use impossible account ID to force empty result
-            console.log('[Client2] No intersection - forcing empty result')
+            
           }
         } else {
           // Only IB filter, no group
           payload.mt5Accounts = ibMT5Accounts.map(id => String(id))
-          console.log('[Client2] Only IB filter (no group):', payload.mt5Accounts.length, 'accounts')
+          
         }
       }
 
@@ -341,7 +340,7 @@ export default function Client2Module() {
       
       // Ignore response if it's from an outdated request (stale data)
       if (currentRequestId !== requestIdRef.current) {
-        console.log('[Client2Module] Ignoring stale response from request', currentRequestId, '(current:', requestIdRef.current, ')')
+        
         return
       }
       
@@ -350,18 +349,7 @@ export default function Client2Module() {
       const data = responseData?.data || responseData
       const t = data.totals || {}
       
-      // Debug: Log first client to verify percentage fields
-      if (data.clients && data.clients.length > 0 && usePercent) {
-        console.log('[Client2] First client with percentage mode:', {
-          login: data.clients[0].login,
-          balance: data.clients[0].balance,
-          balance_percentage: data.clients[0].balance_percentage,
-          credit: data.clients[0].credit,
-          credit_percentage: data.clients[0].credit_percentage,
-          equity: data.clients[0].equity,
-          equity_percentage: data.clients[0].equity_percentage
-        })
-      }
+      // Removed verbose percentage debug log
       
       const clientsData = data.clients || []
       setClients(clientsData)
@@ -733,10 +721,6 @@ export default function Client2Module() {
     if (showPercent && percentageColumns.has(key)) {
       const percentField = percentageFieldMap[key]
       const value = client[percentField]
-      // Debug log for first few items
-      if (client.login === clients[0]?.login && key === 'balance') {
-        console.log('[getCellValue] showPercent:', showPercent, 'key:', key, 'percentField:', percentField, 'value:', value)
-      }
       return value
     }
     // Otherwise use the regular field
@@ -859,7 +843,7 @@ export default function Client2Module() {
       const data = responseData?.data || responseData
       const allClients = (data.clients || []).filter(c => c != null && c.login != null)
 
-      console.log('[Client2Module] Fetched', allClients.length, 'clients for export')
+      
 
       if (allClients.length === 0) {
         alert('No data to export')
@@ -901,7 +885,7 @@ export default function Client2Module() {
       window.URL.revokeObjectURL(url)
       
       setIsLoading(false)
-      console.log('[Client2Module] Export completed successfully')
+      
     } catch (error) {
       console.error('[Client2Module] Export failed:', error)
       alert('Export failed. Please try again.')
@@ -911,7 +895,6 @@ export default function Client2Module() {
 
   const exportAllColumns = async () => {
     try {
-      console.log('[Client2Module] Starting all columns export...')
       setIsLoading(true)
 
       // Build payload with current filters to fetch ALL data
@@ -993,8 +976,6 @@ export default function Client2Module() {
       const data = responseData?.data || responseData
       const allClients = (data.clients || []).filter(c => c != null && c.login != null)
 
-      console.log('[Client2Module] Fetched', allClients.length, 'clients for export')
-
       if (allClients.length === 0) {
         alert('No data to export')
         setIsLoading(false)
@@ -1036,7 +1017,7 @@ export default function Client2Module() {
       window.URL.revokeObjectURL(url)
       
       setIsLoading(false)
-      console.log('[Client2Module] Export completed successfully')
+      
     } catch (error) {
       console.error('[Client2Module] Export failed:', error)
       alert('Export failed. Please try again.')
