@@ -138,6 +138,7 @@ export default function Client2Module() {
   const [totalClients, setTotalClients] = useState(0)
   const [lastUpdateTime, setLastUpdateTime] = useState(Date.now())
   const [isLoading, setIsLoading] = useState(true)
+  const [progressActive, setProgressActive] = useState(false)
   // Visible columns state (restored)
   const [visibleColumns, setVisibleColumns] = useState({
     login: true,
@@ -214,12 +215,12 @@ export default function Client2Module() {
   })
 
   // Fetch clients data via API
-  const fetchClients = useCallback(async (overridePercent = null, isInitialLoad = false) => {
+  const fetchClients = useCallback(async (overridePercent = null, showProgress = false) => {
     // Generate unique request ID to track this specific request
     const currentRequestId = ++requestIdRef.current
     
     try {
-      // Prevent overlapping fetches which can cause network cancellations
+      // Prevent overlapping fetches which can lead to browser/network cancellations
       if (isFetchingRef.current) {
         if (import.meta?.env?.VITE_DEBUG_LOGS === 'true') {
           console.log('[Client2Module] Skipping fetch — previous request in-flight')
@@ -227,8 +228,9 @@ export default function Client2Module() {
         return
       }
       isFetchingRef.current = true
+      if (showProgress) setProgressActive(true)
       // Only show loading on initial load, not on periodic refreshes
-      if (isInitialLoad) {
+      if (showProgress) {
         setIsLoading(true)
       }
       const usePercent = overridePercent !== null ? overridePercent : showPercent
@@ -333,7 +335,8 @@ export default function Client2Module() {
         payload.sortOrder = sortDirection
       }
       
-      // Use searchClients to get totals data with percentage parameter (no AbortController in mobile)
+      // Note: AbortController not used in mobile view - all requests should complete
+      // Use searchClients to get totals data with percentage parameter
       const response = await brokerAPI.searchClients(payload)
       
       // Ignore response if it's from an outdated request (stale data)
@@ -360,21 +363,33 @@ export default function Client2Module() {
         })
       }
       
-      setClients(data.clients || [])
+      const clientsData = data.clients || []
+      setClients(clientsData)
       setTotals(t)
-      setTotalClients(data.total || data.totalClients || data.clients?.length || 0)
+      setTotalClients(data.total || data.totalClients || clientsData.length || 0)
       // Update total pages from API response if available
       const apiPages = data.pages ? Number(data.pages) : null
       setLastUpdateTime(Date.now())
-      // Always set loading to false after successful fetch
+      
+      // Always set loading to false after successful fetch (not just on initial load)
       setIsLoading(false)
+      
+      console.log('[Client2Module] Fetched clients:', {
+        count: clientsData.length,
+        total: data.total || data.totalClients || 0,
+        isInitialLoad,
+        requestId: currentRequestId
+      })
       
       // Cards are now computed via useMemo based on filtered clients
     } catch (error) {
       console.error('Failed to fetch clients:', error)
+      // Always set loading to false after error (not just on initial load)
       setIsLoading(false)
     } finally {
       isFetchingRef.current = false
+      // Let the bar show briefly even for fast requests
+      setTimeout(() => setProgressActive(false), 200)
     }
   }, [showPercent, filters, selectedIB, ibMT5Accounts, getActiveGroupFilter, groups, currentPage, sortColumn, sortDirection, debouncedSearchInput])
 
@@ -399,19 +414,22 @@ export default function Client2Module() {
     setCurrentPage(1)
   }, [filters, debouncedSearchInput, selectedIB, getActiveGroupFilter('client2')])
 
-  // Initial fetch and periodic refresh (reduced frequency). Pause auto-refresh during active search.
+  // Initial fetch and periodic refresh (reduced frequency on mobile). Pause auto-refresh while searching.
   useEffect(() => {
-    fetchClients(null, true)
-    fetchRebateTotals()
+    fetchClients(null, true) // Initial load with progress bar
+    fetchRebateTotals() // Fetch rebate totals on mount
 
+    // Only run periodic refresh when no active search query
     const hasSearch = !!(debouncedSearchInput && debouncedSearchInput.trim())
     const interval = hasSearch ? null : setInterval(() => {
+      // Skip if a fetch is already in progress
       if (!isFetchingRef.current) {
+        // Background refresh without showing the top loader
         fetchClients(null, false)
       }
-    }, 3000)
+    }, 3000) // Refresh every 3s on mobile to reduce overlapping requests
 
-    const rebateInterval = setInterval(() => fetchRebateTotals(), 3600000)
+    const rebateInterval = setInterval(() => fetchRebateTotals(), 3600000) // Refresh rebate every 1 hour
     return () => {
       if (interval) clearInterval(interval)
       clearInterval(rebateInterval)
@@ -437,10 +455,10 @@ export default function Client2Module() {
       { label: 'Total Clients', value: formatNum(clientCount), unit: 'Count', numericValue: clientCount },
       { label: addPercent('Lifetime P&L'), value: formatNum(t.lifetimePnL || 0), unit: 'USD', numericValue: t.lifetimePnL || 0 },
       { label: addPercent('NET Lifetime DW'), value: formatNum((t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0)), unit: 'USD', numericValue: (t.lifetimeDeposit || 0) - (t.lifetimeWithdrawal || 0) },
+      { label: addPercent('Net Lifetime PnL'), value: formatNum((t.lifetimePnL || 0) - (rebateTotals.totalRebate || 0)), unit: 'USD', numericValue: (t.lifetimePnL || 0) - (rebateTotals.totalRebate || 0) },
       { label: 'Total Rebate', value: formatNum(rebateTotals.totalRebate || 0), unit: 'USD', numericValue: rebateTotals.totalRebate || 0 },
       { label: addPercent('Assets'), value: formatNum(t.assets || 0), unit: 'USD', numericValue: t.assets || 0 },
-      // Balance card is not shown on amari-capital branch (mobile)
-      // { label: addPercent('Balance'), value: formatNum(t.balance || 0), unit: 'USD', numericValue: t.balance || 0 },
+      { label: addPercent('Balance'), value: formatNum(t.balance || 0), unit: 'USD', numericValue: t.balance || 0 },
       { label: addPercent('Blocked Commission'), value: formatNum(t.blockedCommission || 0), unit: 'USD', numericValue: t.blockedCommission || 0 },
       { label: addPercent('Blocked Profit'), value: formatNum(t.blockedProfit || 0), unit: 'USD', numericValue: t.blockedProfit || 0 },
       { label: addPercent('Commission'), value: formatNum(t.commission || 0), unit: 'USD', numericValue: t.commission || 0 },
@@ -535,6 +553,7 @@ export default function Client2Module() {
             'Lifetime P&L',
             'NET Lifetime DW',
             'Total Rebate',
+            'Net Lifetime PnL',
             // Commission variants
             'This Week Commission',
             'This Month Commission',
@@ -555,6 +574,14 @@ export default function Client2Module() {
 
     // Append any new labels not in saved order
     labels.forEach(l => { if (!order.includes(l)) order.push(l) })
+
+    // Enforce Net Lifetime PnL at 5th position (index 4)
+    const desiredIndex = 4
+    const nlIndex = order.indexOf('Net Lifetime PnL')
+    if (nlIndex !== -1 && nlIndex !== desiredIndex) {
+      order.splice(nlIndex, 1)
+      order.splice(Math.min(desiredIndex, order.length), 0, 'Net Lifetime PnL')
+    }
 
     // If order differs, update state and persist
     const changed = JSON.stringify(order) !== JSON.stringify(cardOrder)
@@ -582,6 +609,7 @@ export default function Client2Module() {
       'Total Clients': `${baseUrl}Mobile cards icons/Total Clients.svg`,
       'Lifetime P&L': `${baseUrl}Mobile cards icons/LIFETIME PNL.svg`,
       'NET Lifetime DW': `${baseUrl}Mobile cards icons/NET WD.svg`,
+      'Net Lifetime PnL': `${baseUrl}Mobile cards icons/LIFETIME PNL.svg`,
       'Total Rebate': `${baseUrl}Mobile cards icons/AVAILABLE Commision.svg`,
       'Assets': `${baseUrl}Mobile cards icons/Total Balance.svg`,
       'Balance': `${baseUrl}Mobile cards icons/Total Balance.svg`,
@@ -1213,9 +1241,6 @@ export default function Client2Module() {
                   {label:'Client Percentage', path:'/client-percentage', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6" stroke="#404040"/><circle cx="8" cy="8" r="2" stroke="#404040"/><circle cx="16" cy="16" r="2" stroke="#404040"/></svg>
                   )},
-                  {label:'IB Commissions', path:'/ib-commissions', icon:(
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 17l10 5 10-5" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 12l10 5 10-5" stroke="#404040" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  )},
                   {label:'Settings', path:'/settings', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" stroke="#404040"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2" stroke="#404040"/></svg>
                   )},
@@ -1251,8 +1276,8 @@ export default function Client2Module() {
         </div>
       )}
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
+      {/* Main Content: prevent page-level scroll; table will scroll */}
+      <div className="flex-1 overflow-x-hidden overflow-y-hidden flex flex-col" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Action buttons and View All row */}
         <div className="pt-5 pb-4 px-4">
           <div className="flex items-center justify-between">
@@ -1260,15 +1285,15 @@ export default function Client2Module() {
             <div className="flex items-center gap-2">
               <button 
                 onClick={() => setIsCustomizeOpen(true)} 
-                className={`h-8 px-3 rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all relative ${
+                className={`h-8 px-4 min-w-[64px] rounded-[12px] border shadow-sm flex items-center justify-center gap-2 transition-all relative ${
                   (filters.hasFloating || filters.hasCredit || filters.noDeposit || selectedIB || getActiveGroupFilter('client2'))
                     ? 'bg-blue-50 border-blue-200' 
                     : 'bg-white border-[#E5E7EB] hover:bg-gray-50'
                 }`}
               >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                {/* <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M4.5 6.5H9.5M2.5 3.5H11.5M5.5 9.5H8.5" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
+                </svg> */}
                 <span className="text-[#4B4B4B] text-[10px] font-medium font-outfit">Filter</span>
                 {(() => {
                   const filterCount = [
@@ -1290,7 +1315,7 @@ export default function Client2Module() {
                   const next = !showPercent
                   setShowPercent(next)
                   // Immediately refetch with the next percentage state
-                  fetchClients(next)
+                  fetchClients(next, true)
                 }}
                 className={`w-8 h-8 rounded-lg border shadow-sm flex items-center justify-center transition-colors ${
                   showPercent ? 'bg-blue-50 border-blue-200' : 'bg-white border-[#E5E7EB] hover:bg-gray-50'
@@ -1315,8 +1340,34 @@ export default function Client2Module() {
                     <rect x="4" y="15" width="12" height="2" rx="1" fill="#374151"/>
                   </svg>
                 </button>
-                {/* Dropdown menu - simple absolute positioning */}
-                {isColumnDropdownOpen && (
+              </div>
+              {/* Refresh button */}
+              <button 
+                onClick={() => window.location.reload()}
+                disabled={isLoading}
+                className="w-8 h-8 rounded-lg border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Refresh data"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="#6B7280" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            </div>
+            {/* Right side - View All text */}
+            <div>
+              <span
+                onClick={() => setShowViewAllModal(true)}
+                className="text-[10px] font-medium text-[#1A63BC] cursor-pointer hover:underline"
+              >
+                View All
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative" ref={columnDropdownRef}>
+          {/* Moved outside button parent div - Dropdown menu */}
+          {isColumnDropdownOpen && (
                   <>
                     <div
                       className="fixed inset-0 z-40"
@@ -1360,33 +1411,6 @@ export default function Client2Module() {
                     </div>
                   </>
                 )}
-              </div>
-              {/* Refresh button */}
-              <button
-                onClick={() => window.location.reload()}
-                disabled={isLoading}
-                className="w-8 h-8 rounded-lg border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="#1A63BC"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Right side - View All only */}
-            <span
-              ref={viewAllRef}
-              className="text-[#1A63BC] text-[12px] font-semibold leading-[15px] cursor-pointer"
-            >
-              View All
-            </span>
-          </div>
         </div>
 
         {/* Face Cards Carousel */}
@@ -1395,40 +1419,7 @@ export default function Client2Module() {
             ref={scrollContainerRef}
             className="flex gap-[8px] overflow-x-auto scrollbar-hide snap-x snap-mandatory pr-4"
           >
-            {isLoading ? (
-              // Skeleton loading for face cards
-              <>
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                  <div 
-                    key={`skeleton-card-${i}`}
-                    style={{
-                      boxSizing: 'border-box',
-                      minWidth: '125px',
-                      width: '125px',
-                      height: '60px',
-                      background: '#FFFFFF',
-                      border: '1px solid #F2F2F7',
-                      boxShadow: '0px 0px 12px rgba(75, 75, 75, 0.05)',
-                      borderRadius: '12px',
-                      padding: '8px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      scrollSnapAlign: 'start',
-                      flexShrink: 0,
-                      flex: 'none'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                      <div className="h-3 w-16 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
-                    </div>
-                    <div className="h-3 w-20 bg-gray-200 rounded animate-pulse"></div>
-                  </div>
-                ))}
-              </>
-            ) : (
-              orderedCards.map((card, i) => (
+            {orderedCards.map((card, i) => (
                 <div 
                   key={`${card.label}-${lastUpdateTime}`}
                   style={{
@@ -1476,104 +1467,103 @@ export default function Client2Module() {
                       color: card.numericValue > 0 ? '#16A34A' : card.numericValue < 0 ? '#DC2626' : '#000000'
                     }}>
                       {card.value === '' || card.value === undefined ? '0.00' : card.value}
-                    </span>
-                  </div>
+                  </span>
                 </div>
-              ))
-            )}
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Search and Controls Bar */}
+        {/* Search and navigation */}
         <div className="pb-3 px-2">
           <div className="flex items-center gap-1">
-            {/* Search box */}
-            <div className="flex-1 min-w-0 h-[32px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="flex-shrink-0">
-                <circle cx="8" cy="8" r="6.5" stroke="#4B4B4B" strokeWidth="1.5"/>
-                <path d="M13 13L16 16" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              <input 
-                placeholder="Search" 
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="flex-1 min-w-0 text-[11px] text-[#000000] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit"
-              />
-            </div>
+              {/* Search box */}
+              <div className="flex-1 min-w-0 h-[32px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] px-2 flex items-center gap-1.5">
+                <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="flex-shrink-0">
+                  <circle cx="8" cy="8" r="6.5" stroke="#4B4B4B" strokeWidth="1.5"/>
+                  <path d="M13 13L16 16" stroke="#4B4B4B" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                <input 
+                  placeholder="Search" 
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="flex-1 min-w-0 text-[11px] text-[#000000] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit" 
+                />
+              </div>
+              
+              {/* Column selector button */}
+              <div className="relative" ref={columnSelectorButtonRef}>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsColumnSelectorOpen(true)
+                  }}
+                  className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50"
+                  title="Show/Hide Columns"
+                >
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                    <rect x="3" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
+                    <rect x="8.5" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
+                    <rect x="14" y="5" width="3" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
+                  </svg>
+                </button>
+              </div>
 
-            {/* Column selector button */}
-            <div className="relative" ref={columnSelectorButtonRef}>
+              {/* Previous button */}
               <button 
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setIsColumnSelectorOpen(true)
-                }}
-                className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50"
-                title="Show/Hide Columns"
+                onClick={goToPreviousPage}
+                disabled={currentPage === 1}
+                className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                  <rect x="3" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
-                  <rect x="8.5" y="5" width="4" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
-                  <rect x="14" y="5" width="3" height="10" stroke="#4B4B4B" strokeWidth="1.5" rx="1"/>
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                  <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+
+              {/* Page indicator */}
+              <div className="px-2 text-[10px] font-medium text-[#4B4B4B] flex items-center gap-1">
+                <input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  value={currentPage}
+                  onChange={(e) => {
+                    const n = Number(e.target.value)
+                    if (!isNaN(n) && n >= 1 && n <= totalPages) {
+                      setCurrentPage(n)
+                    }
+                  }}
+                  className="w-10 h-6 border border-[#ECECEC] rounded-[8px] text-center text-[10px]"
+                  aria-label="Current page"
+                />
+                <span className="text-[#9CA3AF]">/</span>
+                <span>{totalPages}</span>
+              </div>
+
+              {/* Next button */}
+              <button 
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages}
+                className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                  <path d="M8 6L12 10L8 14" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
             </div>
-
-            {/* Previous button */}
-            <button 
-              onClick={goToPreviousPage}
-              disabled={currentPage === 1}
-              className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                <path d="M12 14L8 10L12 6" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-
-            {/* Page indicator */}
-            <div className="px-2 text-[10px] font-medium text-[#4B4B4B] flex items-center gap-1">
-              <input
-                type="number"
-                min={1}
-                max={totalPages}
-                value={currentPage}
-                onChange={(e) => {
-                  const n = Number(e.target.value)
-                  if (!isNaN(n) && n >= 1 && n <= totalPages) {
-                    setCurrentPage(n)
-                  }
-                }}
-                className="w-10 h-6 border border-[#ECECEC] rounded-[8px] text-center text-[10px]"
-                aria-label="Current page"
-              />
-              <span className="text-[#9CA3AF]">/</span>
-              <span>{totalPages}</span>
-            </div>
-
-            {/* Next button */}
-            <button 
-              onClick={goToNextPage}
-              disabled={currentPage === totalPages}
-              className="w-[28px] h-[28px] bg-white border border-[#ECECEC] rounded-[10px] shadow-[0_0_12px_rgba(75,75,75,0.05)] flex items-center justify-center transition-colors flex-shrink-0 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                <path d="M8 6L12 10L8 14" stroke="#4B4B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
           </div>
-        </div>
 
-        {/* Table Container */}
-        <div className="bg-white shadow-sm border border-[#E5E7EB] overflow-hidden mx-0">
-          <div className="relative">
-            <div className="w-full overflow-x-auto overflow-y-visible" style={{
-            WebkitOverflowScrolling: 'touch',
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#CBD5E0 #F7FAFC',
-            paddingRight: '0px',
-            paddingLeft: '0px'
-          }}>
-            <div className="relative" style={{ minWidth: 'max-content' }}>
+        {/* Table - full width (own scroll, no side margins) */}
+        <div className="flex-1 min-h-0">
+          <div className="bg-white shadow-[0_0_12px_rgba(75,75,75,0.05)] border border-[#F2F2F7] overflow-hidden h-full">
+            {/* Single scroll container with sticky header */}
+            <div className="w-full overflow-x-auto overflow-y-auto scrollbar-hide" style={{
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+              paddingBottom: '8px',
+              maxHeight: '60vh'
+            }}>
+              <div className="relative" style={{ minWidth: 'max-content' }}>
               {/* Header row */}
               <div className="grid bg-blue-500 text-white text-[10px] font-semibold font-outfit sticky top-0 z-20 shadow-[0_2px_4px_rgba(0,0,0,0.1)]" style={{gap: '0px', gridGap: '0px', columnGap: '0px', gridTemplateColumns}}>
                 {visibleColumnsList.map((col, idx) => (

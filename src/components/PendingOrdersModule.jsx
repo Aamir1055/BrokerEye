@@ -90,6 +90,7 @@ export default function PendingOrdersModule() {
   const [customFilterValue1, setCustomFilterValue1] = useState('')
   const [customFilterValue2, setCustomFilterValue2] = useState('')
   const filterRefs = useRef({})
+  const [progressActive, setProgressActive] = useState(false)
 
   // String columns for filter type detection
   const stringColumns = ['login', 'symbol', 'type', 'state']
@@ -101,6 +102,10 @@ export default function PendingOrdersModule() {
     clearIBSelection()
     setActiveGroupFilter('pendingorders', null)
     setSearchInput('')
+    // Show YouTube-style loader briefly on initial mount
+    setProgressActive(true)
+    const t = setTimeout(() => setProgressActive(false), 900)
+    return () => clearTimeout(t)
   }, [])
 
   // Listen for global request to open Customize View from child modals
@@ -460,7 +465,7 @@ export default function PendingOrdersModule() {
       case 'symbol':
         value = order.symbol || '-'
         break
-      case 'type':
+      case 'type': {
         value = order.type || '-'
         const isBuy = value.toUpperCase().includes('BUY')
         const isSell = value.toUpperCase().includes('SELL')
@@ -482,6 +487,7 @@ export default function PendingOrdersModule() {
             </span>
           </div>
         )
+      }
       case 'volume':
         value = formatNum(order.volumeCurrent || order.volume || 0, 2)
         break

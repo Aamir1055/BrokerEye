@@ -64,6 +64,7 @@ export default function LiveDealingModule() {
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
   const [isMobileView, setIsMobileView] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false)
+  const [progressActive, setProgressActive] = useState(false)
   
   // Deals state
   const [deals, setDeals] = useState([])
@@ -116,6 +117,10 @@ export default function LiveDealingModule() {
     setCustomToDate('')
     setAppliedFromDate('')
     setAppliedToDate('')
+    // Brief top loader on initial mount
+    setProgressActive(true)
+    const t = setTimeout(() => setProgressActive(false), 900)
+    return () => clearTimeout(t)
   }, [])
 
   // Listen for global request to open Customize View from child modals
@@ -856,12 +861,6 @@ export default function LiveDealingModule() {
                   )},
                   {label:'Client Percentage', path:'/client-percentage', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 18L18 6" stroke="#404040"/><circle cx="8" cy="8" r="2" stroke="#404040"/><circle cx="16" cy="16" r="2" stroke="#404040"/></svg>
-                  )},
-                  {label:'IB Commissions', path:'/ib-commissions', icon:(
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="9" stroke="#404040"/>
-                      <path d="M12 7v10M8 10h8" stroke="#404040"/>
-                    </svg>
                   )},
                   {label:'Settings', path:'/settings', icon:(
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" stroke="#404040"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2" stroke="#404040"/></svg>

@@ -75,6 +75,7 @@ export default function MarginLevelModule() {
     leverage: false,
     currency: false
   })
+  const [progressActive, setProgressActive] = useState(false)
 
   // Clear all filters on component mount (when navigating to this module)
   useEffect(() => {
@@ -82,6 +83,10 @@ export default function MarginLevelModule() {
     clearIBSelection()
     setActiveGroupFilter('marginlevel', null)
     setSearchInput('')
+    // Brief top loader on initial mount
+    setProgressActive(true)
+    const t = setTimeout(() => setProgressActive(false), 900)
+    return () => clearTimeout(t)
   }, [])
 
   // Listen for global request to open Customize View from child modals
@@ -270,10 +275,11 @@ export default function MarginLevelModule() {
       case 'marginFree':
         value = formatNum(account.margin_free || account.marginFree || 0, 2)
         break
-      case 'marginLevel':
+      case 'marginLevel': {
         const ml = getMarginLevelPercent(account)
         value = ml !== undefined ? formatNum(ml, 2) + '%' : '-'
         break
+      }
       case 'profit':
         value = formatNum(account.profit || 0, 2)
         break

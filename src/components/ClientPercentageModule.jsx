@@ -62,6 +62,7 @@ export default function ClientPercentageModule() {
     updatedAt: false,
     actions: true
   })
+  const [progressActive, setProgressActive] = useState(false)
 
   // Edit Modal State
   const [showEditModal, setShowEditModal] = useState(false)
@@ -83,6 +84,10 @@ export default function ClientPercentageModule() {
     clearIBSelection()
     setActiveGroupFilter('clientpercentage', null)
     setSearchInput('')
+    // Brief top loader on initial mount
+    setProgressActive(true)
+    const t = setTimeout(() => setProgressActive(false), 900)
+    return () => clearTimeout(t)
   }, [])
 
   // Listen for global request to open Customize View from child modals
@@ -117,6 +122,18 @@ export default function ClientPercentageModule() {
   useEffect(() => {
     setCurrentPage(1)
   }, [searchInput, sortColumn, sortDirection, hasCustomFilter])
+
+  // Prevent background scroll when modal is open
+  useEffect(() => {
+    if (selectedClientForDetails) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [selectedClientForDetails])
 
   // Fetch data when page changes or on initial mount
   useEffect(() => {
@@ -183,10 +200,12 @@ export default function ClientPercentageModule() {
       })
       
       setLoading(false)
+      setProgressActive(false)
     } catch (err) {
       console.error('Error fetching client percentages:', err)
       setError('Failed to load client percentages')
       setLoading(false)
+      setProgressActive(false)
     }
   }
 
@@ -268,6 +287,8 @@ export default function ClientPercentageModule() {
   }, [ibFilteredData, searchInput])
 
   const handleSort = (columnKey) => {
+    // Show top loader for sort-triggered fetch
+    setProgressActive(true)
     if (sortColumn === columnKey) {
       setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
     } else {
@@ -790,7 +811,7 @@ export default function ClientPercentageModule() {
                     >
                       <span className="truncate">{col.label}</span>
                       {sortColumn === col.key && (
-                        <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                        <span className="ml-1">{sortDirection === 'asc' ? '' : ''}</span>
                       )}
                     </div>
                   ))}
@@ -1208,4 +1229,5 @@ export default function ClientPercentageModule() {
     </div>
   )
 }
+
 

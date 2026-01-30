@@ -120,10 +120,12 @@ const ClientPercentagePage = () => {
         params.login = searchQuery.trim()
       }
 
-      const response = await brokerAPI.get('/broker/clients/percentages', { params })
-      
-      if (response.data?.status === 'success' && response.data?.data?.clients) {
-        const logins = response.data.data.clients.map(client => client.client_login)
+      // Use API wrapper so Vite proxy handles CORS in development
+      const response = await brokerAPI.getAllClientPercentages(params)
+      const data = response?.data || {}
+      const clientsList = data?.clients || data?.data?.clients || []
+      if (Array.isArray(clientsList)) {
+        const logins = clientsList.map(client => client.client_login)
         // Remove duplicates and sort
         const uniqueLogins = [...new Set(logins)].sort((a, b) => a - b)
         setLoginColumnValues(uniqueLogins)
@@ -728,9 +730,12 @@ const ClientPercentagePage = () => {
     setProgressActive(!!loading)
   }, [loading])
 
-  return isMobile ? (
-    <ClientPercentageModule />
-  ) : (
+  // If mobile, use mobile module (after all hooks are called)
+  if (isMobile) {
+    return <ClientPercentageModule />
+  }
+
+  return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar
         isOpen={sidebarOpen}
@@ -858,9 +863,9 @@ const ClientPercentagePage = () => {
           </div>
 
           {/* Table */}
-          {clients.length === 0 && !loading ? (
+          {clients.length === 0 && !loading && !searchQuery ? (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-              <div className="text-6xl mb-4">📊</div>
+              <div className="text-6xl mb-4">=���</div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No client data found</h3>
               <p className="text-sm text-gray-500">Client percentage data will appear here</p>
             </div>
@@ -873,34 +878,42 @@ const ClientPercentagePage = () => {
                   <div className="flex items-center gap-2 flex-1">
                     {/* Search Bar */}
                     <div className="relative flex-1 max-w-md" ref={searchRef}>
-                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 18 18">
-                        <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
-                        <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      </svg>
                       <input
                         type="text"
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                         placeholder="Search"
-                        className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        className="w-full h-10 pl-3 pr-24 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                       />
-                      
-                      {searchInput && (
+                      {/* Clear button inside input */}
+                      {searchInput.trim().length > 0 && (
                         <button
                           onClick={() => {
                             setSearchInput('')
                             setSearchQuery('')
                             setCurrentPage(1)
                           }}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
+                          className="absolute right-14 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
                           title="Clear search"
+                          aria-label="Clear search"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </button>
                       )}
+                      {/* Search button inside input - right aligned */}
+                      <button
+                        onClick={handleSearch}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                        title="Search"
+                        aria-label="Search"
+                      >
+                        <svg className="w-5 h-5 text-[#4B5563]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0z" />
+                        </svg>
+                      </button>
                     </div>
                     
                     {/* Columns Button (icon only) */}
@@ -1392,3 +1405,4 @@ const ClientPercentagePage = () => {
 }
 
 export default ClientPercentagePage
+

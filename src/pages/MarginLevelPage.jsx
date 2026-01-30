@@ -486,6 +486,28 @@ const MarginLevelPage = () => {
   // Show loading only for table data
   const isDataLoading = loading.accounts
 
+  // Sync top header loader with accounts fetch and manual refreshes (min-show + hide-delay)
+  const mlProgressStartRef = useRef(0)
+  const mlProgressTimerRef = useRef(null)
+  useEffect(() => {
+    const active = !!loading?.accounts || isRefreshing
+    if (active) {
+      mlProgressStartRef.current = Date.now()
+      if (mlProgressTimerRef.current) { clearTimeout(mlProgressTimerRef.current); mlProgressTimerRef.current = null }
+      setProgressActive(true)
+    } else {
+      const MIN_SHOW_MS = 500
+      const HIDE_DELAY_MS = 150
+      const elapsed = Date.now() - (mlProgressStartRef.current || 0)
+      const wait = Math.max(HIDE_DELAY_MS, MIN_SHOW_MS - elapsed, 0)
+      if (mlProgressTimerRef.current) clearTimeout(mlProgressTimerRef.current)
+      mlProgressTimerRef.current = setTimeout(() => setProgressActive(false), wait)
+    }
+    return () => {
+      if (mlProgressTimerRef.current) { clearTimeout(mlProgressTimerRef.current); mlProgressTimerRef.current = null }
+    }
+  }, [loading?.accounts, isRefreshing])
+
   // Helper function to render table header with filter
   const renderHeaderCell = (columnKey, label, sortKey = null) => {
     const filterCount = getActiveFilterCount(columnKey)
@@ -861,6 +883,23 @@ const MarginLevelPage = () => {
         onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen', JSON.stringify(false)) } catch {} }}
         onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
       />
+
+      {/* YouTube-style Loading Bar - Outside main to span full width */}
+      {progressActive && (
+        <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999] overflow-hidden pointer-events-none" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
+          <style>{`
+            @keyframes topHeaderTrackMargin {
+              0% { left: -30%; }
+              100% { left: 100%; }
+            }
+          `}</style>
+          <div className="absolute top-0 h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 shadow-lg" style={{
+            width: '30%',
+            left: '-30%',
+            animation: 'topHeaderTrackMargin 0.9s linear infinite'
+          }} />
+        </div>
+      )}
 
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
         {/* YouTube-style Loading Bar */}
