@@ -1539,11 +1539,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   // Column resize handlers for deals
   const handleDealsResizeStart = (e, columnKey) => {
     e.preventDefault()
-<<<<<<< HEAD:src/shared/components/modals/ClientPositionsModal.jsx
-    console.log('Deals resize start:', columnKey)
-=======
     e.stopPropagation()
->>>>>>> broker:src/components/ClientPositionsModal.jsx
     setResizingDealsColumn(columnKey)
     resizeStartX.current = e.clientX
     // Get the actual computed width from the th element

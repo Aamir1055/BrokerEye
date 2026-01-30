@@ -133,7 +133,7 @@ const TwoFactorVerification = () => {
                       value={code}
                       onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                       className="block w-full px-3 sm:px-4 py-3 sm:py-4 text-lg sm:text-xl text-center text-gray-900 bg-white/90 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 tracking-[0.25em] sm:tracking-[0.35em] font-mono shadow-inner placeholder-gray-400"
-                      placeholder="● ● ● ● ● ●"
+                      placeholder="ΓùÅ ΓùÅ ΓùÅ ΓùÅ ΓùÅ ΓùÅ"
                       maxLength={6}
                       disabled={isLoading}
                       required
@@ -223,7 +223,7 @@ const TwoFactorVerification = () => {
 
           {/* Enhanced Footer - Responsive */}
           <div className="text-center text-xs sm:text-sm text-gray-600 font-medium px-4 sm:px-0">
-            © 2025 Broker Eyes. All rights reserved.
+            ┬⌐ 2025 Broker Eyes. All rights reserved.
           </div>
         </div>
       </div>

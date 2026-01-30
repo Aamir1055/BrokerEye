@@ -62,7 +62,7 @@ const BackupCodesModal = ({ backupCodes, onClose }) => {
           </div>
           
           <div class="warning">
-            <h3>⚠️ Important Security Information</h3>
+            <h3>ΓÜá∩╕Å Important Security Information</h3>
             <ul>
               <li>Store these codes in a safe and secure location</li>
               <li>Each backup code can only be used once</li>
@@ -110,9 +110,9 @@ const BackupCodesModal = ({ backupCodes, onClose }) => {
               <div>
                 <h3 className="font-medium text-yellow-800 text-sm mb-1">Save These Codes Securely</h3>
                 <ul className="text-xs text-yellow-700 space-y-0.5">
-                  <li>• Each code can only be used once</li>
-                  <li>• Use them if you lose your authenticator device</li>
-                  <li>• Store them in a safe, offline location</li>
+                  <li>ΓÇó Each code can only be used once</li>
+                  <li>ΓÇó Use them if you lose your authenticator device</li>
+                  <li>ΓÇó Store them in a safe, offline location</li>
                 </ul>
               </div>
             </div>
