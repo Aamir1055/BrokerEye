@@ -131,8 +131,8 @@ export default function PositionModule() {
     phone: false,
     position: false,
     symbol: true,
-    action: false,
-    netType: true,
+    action: true,
+    netType: false,
     volume: false,
     volumePercentage: false,
     priceOpen: true,
@@ -140,8 +140,8 @@ export default function PositionModule() {
     netVolume: true,
     sl: false,
     tp: false,
-    profit: false,
-    totalProfit: true,
+    profit: true,
+    totalProfit: false,
     profitPercentage: false,
     storage: false,
     storagePercentage: false,
@@ -641,14 +641,28 @@ export default function PositionModule() {
     
     // Apply column filters
     filtered = applyAllColumnFilters(filtered)
+
+    // Prepare normalized sort key for action (Buy/Sell) to ensure reliable sorting
+    filtered = filtered.map(p => {
+      const rawType = p.type
+      const rawAction = p.action
+      const isBuy = (
+        rawType === 0 || rawType === '0' || rawType === 'Buy' ||
+        rawAction === 0 || rawAction === '0' ||
+        (typeof rawAction === 'string' && rawAction.toLowerCase() === 'buy')
+      )
+      const actionSortKey = isBuy ? 0 : 1
+      return { ...p, actionSortKey }
+    })
     
     // Map column keys to actual data fields for sorting
     const columnKeyMapping = {
       'updated': 'timeUpdate',
       'netType': 'type',
-      'action': 'type',
+      'action': 'actionSortKey',
       'netVolume': 'volume',
-      'totalProfit': 'profit'
+      'profit': 'profit_usd',
+      'totalProfit': 'profit_usd'
     }
     const sortKey = columnKeyMapping[sortColumn] || sortColumn
     
@@ -789,13 +803,20 @@ export default function PositionModule() {
       case 'action':
         return (
           <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>
-            <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${
-              pos.type === 0 || pos.type === 'Buy' 
-                ? 'bg-green-100 text-green-700' 
-                : 'bg-red-100 text-red-700'
-            }`}>
-              {pos.type === 0 || pos.type === 'Buy' ? 'Buy' : 'Sell'}
-            </span>
+            {(() => {
+              const rawType = pos.type
+              const rawAction = pos.action
+              const isBuy = (
+                rawType === 0 || rawType === '0' || rawType === 'Buy' ||
+                rawAction === 0 || rawAction === '0' ||
+                (typeof rawAction === 'string' && rawAction.toLowerCase() === 'buy')
+              )
+              return (
+                <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${isBuy ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  {isBuy ? 'Buy' : 'Sell'}
+                </span>
+              )
+            })()}
           </div>
         )
       case 'priceOpen':
@@ -807,6 +828,8 @@ export default function PositionModule() {
         return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.volume || 0)}</div>
       case 'volumePercentage':
         return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.volumePercentage || 0)}%</div>
+      case 'profit':
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.profit_usd || 0)}</div>
       case 'profitPercentage':
         return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.profitPercentage || 0)}%</div>
       case 'storage':
@@ -900,7 +923,7 @@ export default function PositionModule() {
   // Update cards when filtered positions change (includes date filter)
   useEffect(() => {
     const totalPositions = filteredPositions.length
-    const totalFloatingProfit = filteredPositions.reduce((sum, p) => sum + (p.profit || 0), 0)
+    const totalFloatingProfit = filteredPositions.reduce((sum, p) => sum + (Number(p.profit_usd) || 0), 0)
     const uniqueLogins = new Set(filteredPositions.map(p => p.login)).size
     const uniqueSymbols = new Set(filteredPositions.map(p => p.symbol)).size
     
