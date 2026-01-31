@@ -8,6 +8,14 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
   // Deployed to root directory (htdocs)
   base: '/',
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./test/setup.ts'],
+    globals: true,
+    coverage: {
+      provider: 'v8',
+    }
+  },
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
