@@ -12,6 +12,11 @@ export const useAuth = () => {
 }
 
 export const AuthProvider = ({ children }) => {
+  // Safe localStorage helpers (avoid SecurityError in restricted contexts)
+  const canUseLS = () => { try { return typeof window !== 'undefined' && !!window.localStorage } catch { return false } }
+  const lsGet = (key) => { try { return canUseLS() ? window.localStorage.getItem(key) : null } catch { return null } }
+  const lsSet = (key, value) => { try { if (canUseLS()) window.localStorage.setItem(key, value) } catch { /* no-op */ } }
+  const lsRemove = (key) => { try { if (canUseLS()) window.localStorage.removeItem(key) } catch { /* no-op */ } }
   const [user, setUser] = useState(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -21,21 +26,28 @@ export const AuthProvider = ({ children }) => {
 
   // Check if user is already logged in on app start
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    const userData = localStorage.getItem('user_data')
-    
-    if (token && userData) {
-      try {
-        const parsedUser = JSON.parse(userData)
-        setUser(parsedUser)
-        setIsAuthenticated(true)
-        console.log('[Auth] Session restored from localStorage')
-      } catch (error) {
-        console.error('Error parsing stored user data:', error)
-        logout()
+    try {
+      const token = lsGet('access_token')
+      const userData = lsGet('user_data')
+      
+      if (token && userData) {
+        try {
+          const parsedUser = JSON.parse(userData)
+          setUser(parsedUser)
+          setIsAuthenticated(true)
+          if (import.meta?.env?.VITE_DEBUG_LOGS === 'true') {
+            console.log('[Auth] Session restored from localStorage')
+          }
+        } catch (error) {
+          console.error('Error parsing stored user data:', error)
+          logout()
+        }
       }
+    } catch (e) {
+      console.warn('[Auth] localStorage unavailable:', e?.message)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [])
 
   const login = async (username, password) => {
@@ -123,17 +135,19 @@ export const AuthProvider = ({ children }) => {
 
   const handleLoginSuccess = (data) => {
     // Store tokens
-    localStorage.setItem('access_token', data.access_token)
-    localStorage.setItem('refresh_token', data.refresh_token)
-    localStorage.setItem('user_data', JSON.stringify(data.broker))
+    lsSet('access_token', data.access_token)
+    lsSet('refresh_token', data.refresh_token)
+    lsSet('user_data', JSON.stringify(data.broker))
     
     // Update state
     setUser(data.broker)
     setIsAuthenticated(true)
     setAuthError(null)
     
-    console.log('[Auth] Login successful - tokens stored')
-    console.log('[Auth] Refresh token will be used automatically when access token expires')
+    if (import.meta?.env?.VITE_DEBUG_LOGS === 'true') {
+      console.log('[Auth] Login successful - tokens stored')
+      console.log('[Auth] Refresh token will be used automatically when access token expires')
+    }
     
     // Dispatch login event to trigger IB email fetch
     window.dispatchEvent(new CustomEvent('auth:login'))
@@ -147,9 +161,9 @@ export const AuthProvider = ({ children }) => {
       console.error('Logout error:', error)
     } finally {
       // Clear storage and state regardless of API call success
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
-      localStorage.removeItem('user_data')
+      lsRemove('access_token')
+      lsRemove('refresh_token')
+      lsRemove('user_data')
       
       setUser(null)
       setIsAuthenticated(false)

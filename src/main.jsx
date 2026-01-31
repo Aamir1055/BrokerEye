@@ -16,13 +16,21 @@ if (!DEBUG_LOGS) {
 
 // Unregister any existing service workers in development
 if (import.meta.env.DEV) {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(registrations => {
-      for (let registration of registrations) {
-        registration.unregister()
-        console.log('Service Worker unregistered:', registration.scope)
-      }
-    })
+  try {
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator && typeof navigator.serviceWorker?.getRegistrations === 'function') {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (let registration of registrations) {
+          try {
+            registration.unregister()
+            if (DEBUG_LOGS) console.log('Service Worker unregistered:', registration.scope)
+          } catch {}
+        }
+      }).catch(() => {
+        // Ignore environments where service workers are disallowed
+      })
+    }
+  } catch {
+    // Ignore environments where service workers are disallowed
   }
 }
 

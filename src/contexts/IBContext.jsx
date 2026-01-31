@@ -12,6 +12,11 @@ export const useIB = () => {
 };
 
 export const IBProvider = ({ children }) => {
+  // Safe localStorage helpers
+  const canUseLS = () => { try { return typeof window !== 'undefined' && !!window.localStorage } catch { return false } }
+  const lsGet = (key) => { try { return canUseLS() ? window.localStorage.getItem(key) : null } catch { return null } }
+  const lsSet = (key, value) => { try { if (canUseLS()) window.localStorage.setItem(key, value) } catch { /* no-op */ } }
+  const lsRemove = (key) => { try { if (canUseLS()) window.localStorage.removeItem(key) } catch { /* no-op */ } }
   const [selectedIB, setSelectedIB] = useState(null);
   const [ibList, setIBList] = useState([]);
   const [ibMT5Accounts, setIBMT5Accounts] = useState([]);
@@ -34,9 +39,11 @@ export const IBProvider = ({ children }) => {
 
     // If already authenticated (tokens present) prefetch once on mount
     try {
-      const token = localStorage.getItem('access_token')
+      const token = lsGet('access_token')
       if (token) {
-        console.log('[IB] Existing access_token detected on mount → prefetch IB emails')
+        if (import.meta?.env?.VITE_DEBUG_LOGS === 'true') {
+          console.log('[IB] Existing access_token detected on mount → prefetch IB emails')
+        }
         fetchIBList()
       }
     } catch {}
@@ -129,16 +136,16 @@ export const IBProvider = ({ children }) => {
     setSelectedIB(ib);
     // Store in localStorage for persistence
     if (ib) {
-      localStorage.setItem('selectedIB', JSON.stringify(ib));
+      lsSet('selectedIB', JSON.stringify(ib));
     } else {
-      localStorage.removeItem('selectedIB');
+      lsRemove('selectedIB');
     }
   };
 
   const clearIBSelection = () => {
     setSelectedIB(null);
     setIBMT5Accounts([]);
-    localStorage.removeItem('selectedIB');
+    lsRemove('selectedIB');
   };
 
   // Filter items by active IB (works for any array with login field)
@@ -158,7 +165,7 @@ export const IBProvider = ({ children }) => {
 
   // Clear IB filter on page refresh
   useEffect(() => {
-    localStorage.removeItem('selectedIB');
+    lsRemove('selectedIB');
     setSelectedIB(null);
   }, []);
 

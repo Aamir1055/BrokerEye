@@ -1,5 +1,13 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 
+// Safe localStorage helpers to handle environments where storage is denied/blocked
+const canUseLS = () => {
+  try { return typeof window !== 'undefined' && !!window.localStorage } catch { return false }
+}
+const lsGet = (key) => { try { return canUseLS() ? window.localStorage.getItem(key) : null } catch { return null } }
+const lsSet = (key, value) => { try { if (canUseLS()) window.localStorage.setItem(key, value) } catch { /* no-op */ } }
+const lsRemove = (key) => { try { if (canUseLS()) window.localStorage.removeItem(key) } catch { /* no-op */ } }
+
 const GroupContext = createContext()
 
 export const useGroups = () => {
@@ -14,9 +22,11 @@ export const GroupProvider = ({ children }) => {
   // Unified groups stored in localStorage - works across all modules
   const [groups, setGroups] = useState(() => {
     try {
-      const saved = localStorage.getItem('unifiedLoginGroups')
+      const saved = lsGet('unifiedLoginGroups')
       const loadedGroups = saved ? JSON.parse(saved) : []
-      console.log('Loading unified login groups from localStorage:', loadedGroups.length, 'groups found')
+      if (import.meta?.env?.VITE_DEBUG_LOGS === 'true') {
+        console.log('Loading unified login groups from localStorage:', loadedGroups.length, 'groups found')
+      }
       return loadedGroups
     } catch (error) {
       console.error('Failed to load unified login groups:', error)
@@ -31,14 +41,16 @@ export const GroupProvider = ({ children }) => {
 
   // Clear group filters from localStorage on page refresh
   useEffect(() => {
-    localStorage.removeItem('activeGroupFilters');
-  }, []);
+    lsRemove('activeGroupFilters')
+  }, [])
 
   // Save to localStorage whenever groups change
   useEffect(() => {
     try {
-      localStorage.setItem('unifiedLoginGroups', JSON.stringify(groups))
-      console.log('Saved unified login groups to localStorage:', groups.length, 'groups')
+      lsSet('unifiedLoginGroups', JSON.stringify(groups))
+      if (import.meta?.env?.VITE_DEBUG_LOGS === 'true') {
+        console.log('Saved unified login groups to localStorage:', groups.length, 'groups')
+      }
     } catch (error) {
       console.error('Failed to save unified login groups:', error)
     }
@@ -47,8 +59,10 @@ export const GroupProvider = ({ children }) => {
   // Save active group filters to localStorage whenever they change
   useEffect(() => {
     try {
-      localStorage.setItem('activeGroupFilters', JSON.stringify(activeGroupFilters))
-      console.log('Saved active group filters to localStorage:', activeGroupFilters)
+      lsSet('activeGroupFilters', JSON.stringify(activeGroupFilters))
+      if (import.meta?.env?.VITE_DEBUG_LOGS === 'true') {
+        console.log('Saved active group filters to localStorage:', activeGroupFilters)
+      }
     } catch (error) {
       console.error('Failed to save active group filters:', error)
     }
