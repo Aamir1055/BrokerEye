@@ -326,7 +326,39 @@ const Client2Page = () => {
     localStorage.setItem('client2ColumnWidths', JSON.stringify(columnWidths))
   }, [columnWidths])
 
-  // Server-side value search only when committed (Enter)
+  // Debounce column value search as user types (500ms delay)
+  useEffect(() => {
+    const timers = {}
+
+    Object.keys(columnValueSearch).forEach(columnKey => {
+      const searchQuery = columnValueSearch[columnKey] || ''
+
+      if (timers[columnKey]) clearTimeout(timers[columnKey])
+      timers[columnKey] = setTimeout(() => {
+        // If search is empty, remove from debounce state (will trigger reset to show all values)
+        // If search has text, update debounced state to trigger search
+        if (searchQuery.trim() === '') {
+          setColumnValueSearchDebounce(prev => {
+            const newState = { ...prev }
+            delete newState[columnKey]
+            return newState
+          })
+          // Reset to show all initial values
+          setColumnValues(prev => ({ ...prev, [columnKey]: [] }))
+          setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
+          fetchColumnValuesWithSearch(columnKey, '', true)
+        } else {
+          setColumnValueSearchDebounce(prev => ({ ...prev, [columnKey]: searchQuery }))
+        }
+      }, 500) // 500ms debounce delay
+    })
+
+    return () => {
+      Object.values(timers).forEach(timer => clearTimeout(timer))
+    }
+  }, [columnValueSearch])
+
+  // Server-side value search when debounced search changes
   useEffect(() => {
     const timers = {}
 
@@ -335,7 +367,7 @@ const Client2Page = () => {
 
       if (timers[columnKey]) clearTimeout(timers[columnKey])
       timers[columnKey] = setTimeout(() => {
-        // Reset and fetch with committed search query
+        // Reset and fetch with search query
         setColumnValues(prev => ({ ...prev, [columnKey]: [] }))
         setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
         fetchColumnValuesWithSearch(columnKey, searchQuery, true)
@@ -5313,14 +5345,6 @@ const Client2Page = () => {
 
                                               {/* Checkbox Value List - Also for numeric columns */}
                                               <div className="flex-1 overflow-hidden flex flex-col">
-                                                {/* Initial loading - centered when no values yet */}
-                                                {columnValuesLoading[columnKey] && !(columnValues[columnKey] || []).length && (
-                                                  <div className="flex-1 flex flex-col items-center justify-center py-12">
-                                                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                                                    <p className="text-sm text-gray-600 mt-3">Loading filter values...</p>
-                                                  </div>
-                                                )}
-
                                                 {/* Search Bar */}
                                                 {(columnValues[columnKey] || []).length > 0 && (
                                                   <div className="px-3 py-2 border-b border-gray-200">
@@ -5729,16 +5753,8 @@ const Client2Page = () => {
 
                                               {/* Checkbox Value List */}
                                               <div className="flex-1 overflow-hidden flex flex-col">
-                                                {/* Initial loading - centered when no values yet */}
-                                                {loading && !allValues.length && (
-                                                  <div className="flex-1 flex flex-col items-center justify-center py-12">
-                                                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                                                    <p className="text-sm text-gray-600 mt-3">Loading filter values...</p>
-                                                  </div>
-                                                )}
-
                                                 {/* Search Bar */}
-                                                (
+                                                {allValues.length > 0 && (
                                                   <div className="px-3 py-2 border-b border-gray-200">
                                                     <div className="relative">
                                                       <svg className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -5767,10 +5783,10 @@ const Client2Page = () => {
                                                       />
                                                     </div>
                                                   </div>
-                                                )
+                                                )}
 
                                                 {/* Select Visible and Values List */}
-                                                (
+                                                {allValues.length > 0 && (
                                                   <>
                                                     {/* Select Visible Checkbox */}
                                                     {columnValuesUnsupported[columnKey] ? null : (
@@ -5881,7 +5897,7 @@ const Client2Page = () => {
                                                   )}
                                                 </div>
                                                   </>
-                                                )
+                                                )}
                                               </div>
 
                                               {/* Footer actions - always visible even when condition panel open */}
