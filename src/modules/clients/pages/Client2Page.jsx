@@ -561,7 +561,7 @@ const Client2Page = () => {
         // Check if saved columns have the required new columns (accountType, processorType, lifetimePnL)
         // If they're missing, use new defaults instead
         if (!parsed.hasOwnProperty('accountType') || !parsed.hasOwnProperty('processorType') || !parsed.hasOwnProperty('lifetimePnL')) {
-          console.log('[Client2] Saved columns missing new fields, resetting to defaults')
+          
           localStorage.removeItem('client2PageVisibleColumns')
           return getDefaultColumns()
         }
@@ -965,7 +965,7 @@ const Client2Page = () => {
     lastRequestWasSilentRef.current = !!silent
     isFetchingRef.current = true
     if (!silent) setProgressActive(true)
-    console.log('[Client2] fetchClients called - requestId:', currentRequestId, 'silent:', silent, 'columnFilters:', columnFilters)
+    
     try {
       // Only show loading spinner on initial page load, not on subsequent fetches
       if (!silent && initialLoad) {
@@ -1095,7 +1095,7 @@ const Client2Page = () => {
 
             // Skip checkbox filter if text or number filter is already active for this field
             if (textFilteredFields.has(field) || numberFilteredFields.has(field)) {
-              console.log(`[Client2] 🔍 Checkbox ${columnKey}: skipped (text/number filter active)`)
+              
               return
             }
 
@@ -1104,7 +1104,7 @@ const Client2Page = () => {
               const vals = Array.from(new Set(filterValues.map(v => Number(v)).filter(v => Number.isFinite(v))))
               if (vals.length > 0) {
                 checkboxLoginIds = vals
-                console.log(`[Client2] 🔍 Checkbox login: routing to mt5Accounts with ${vals.length} values`)
+                
               }
             } else {
               const selectedValues = Array.from(new Set(filterValues.map(v => String(v).trim()).filter(Boolean)))
@@ -1122,11 +1122,11 @@ const Client2Page = () => {
                   if (v === 'Not Connected') return 0
                   return v // fallback for any unexpected values
                 })
-                console.log('[Client2] 🔍 processorType filter transformation:', selectedValues, '→', apiValues)
+                
               }
 
               combinedFilters.push({ field, operator: 'in', value: apiValues })
-              console.log(`[Client2] 🔍 Checkbox ${columnKey}: using in with ${apiValues.length} values`, apiValues)
+              
             }
           }
         }
@@ -1134,7 +1134,7 @@ const Client2Page = () => {
 
       if (combinedFilters.length > 0) {
         payload.filters = combinedFilters
-        console.log('[Client2] Built filters:', JSON.stringify(combinedFilters, null, 2))
+        
       }
 
       // Build MT5 accounts filter, merging Account modal, Login checkbox selection, Active Group (manual list), and selected IB accounts
@@ -1148,7 +1148,7 @@ const Client2Page = () => {
       if (Array.isArray(checkboxLoginIds) && checkboxLoginIds.length > 0) {
         const union = new Set([...(mt5AccountsFilter || []).map(Number), ...checkboxLoginIds.map(Number)])
         mt5AccountsFilter = Array.from(union)
-        console.log('[Client2] 🔗 Merged login checkbox IDs into mt5AccountsFilter:', mt5AccountsFilter.length)
+        
       }
 
       // Add account range filter if present
@@ -1174,7 +1174,7 @@ const Client2Page = () => {
         } else {
           mt5AccountsFilter = [...new Set(ibAccounts)]
         }
-        if (DEBUG_LOGS) console.log('[Client2] Applying IB filter:', ibAccounts.length, 'accounts')
+        
       }
 
       // Add active group filter on top of IB filter - use API filtering
@@ -1183,7 +1183,7 @@ const Client2Page = () => {
           // Range-based group
           payload.accountRangeMin = activeGroup.range.from
           payload.accountRangeMax = activeGroup.range.to
-          if (DEBUG_LOGS) console.log('[Client2] Applying range group filter:', activeGroup.range)
+          
         } else if (activeGroup.loginIds && activeGroup.loginIds.length > 0) {
           // Manual selection group: intersect with IB-filtered results
           const groupAccounts = activeGroup.loginIds.map(id => Number(id))
@@ -1193,20 +1193,20 @@ const Client2Page = () => {
           } else {
             mt5AccountsFilter = [...new Set(groupAccounts)]
           }
-          if (DEBUG_LOGS) console.log('[Client2] Applying manual group filter:', groupAccounts.length, 'accounts')
+          
         }
       }
 
       // Always send mt5Accounts as a dedicated parameter (server-side intersection like mobile)
       if (mt5AccountsFilter.length > 0) {
         payload.mt5Accounts = mt5AccountsFilter.map(a => String(a))
-        if (DEBUG_LOGS) console.log('[Client2] Sending mt5Accounts to API:', payload.mt5Accounts.length)
+        
       } else {
         // If IB or manual group was applied but intersection is empty, force empty result
         const manualGroupApplied = !!(activeGroup && activeGroup.loginIds && activeGroup.loginIds.length > 0)
         if (hasIBFilter || manualGroupApplied) {
           payload.mt5Accounts = ['0']
-          if (DEBUG_LOGS) console.log('[Client2] Empty intersection; forcing empty result with mt5Accounts=["0"]')
+          
         }
       }
 
@@ -1250,7 +1250,7 @@ const Client2Page = () => {
               eqPayload.page = pageNum
               const resp = await brokerAPI.searchClients(eqPayload, { signal: abortControllerRef.current.signal })
               if (abortControllerRef.current.signal.aborted || currentRequestId !== requestIdRef.current) {
-                console.log('[Client2] ⏹️ Abort/replace detected during email-equality merge; stopping early')
+                
                 return
               }
               const data = extractData(resp)
@@ -1379,7 +1379,7 @@ const Client2Page = () => {
         const BIG_LIMIT = Number(itemsPerPage) || 100
         const mergedMap = new Map()
 
-        console.log(`[Client2] 🚚 Chunking '${primaryLargeFilter.field}' with ${primaryLargeFilter.value.length} values into ${chunks.length} chunks`)
+        
 
         // Fetch all chunks and merge
         for (let ci = 0; ci < chunks.length; ci++) {
@@ -1388,7 +1388,7 @@ const Client2Page = () => {
           const chunkPayload = { ...payload, page: 1, limit: BIG_LIMIT, filters: filtersForChunk }
           if (percentModeActive) chunkPayload.percentage = true
 
-          console.log(`[Client2] 📡 Chunk ${ci + 1}/${chunks.length} payload:`, JSON.stringify(chunkPayload))
+          
 
           // Page through this chunk if needed
           let pageNum = 1
@@ -1398,7 +1398,7 @@ const Client2Page = () => {
             // Respect aborts and newer requests: pass signal and bail on staleness
             const resp = await brokerAPI.searchClients(chunkPayload, { signal: abortControllerRef.current.signal })
             if (abortControllerRef.current.signal.aborted || currentRequestId !== requestIdRef.current) {
-              console.log('[Client2] ⏹️ Abort/replace detected during chunk merge; stopping early')
+              
               return
             }
             const data = extractData(resp)
@@ -1538,10 +1538,10 @@ const Client2Page = () => {
 
       // Always log payload when filters are present to debug filtering issues
       if (payload.filters && payload.filters.length > 0) {
-        console.log('[Client2] 🔍 API Request Payload:', JSON.stringify(payload, null, 2))
+        
       }
 
-      console.log('[Client2] 📡 Calling brokerAPI.searchClients with payload:', payload)
+      
 
       // Fetch data - only fetch percentage data when in percentage mode
       if (shouldFetchPercentage) {
@@ -1550,7 +1550,7 @@ const Client2Page = () => {
         
         // Ignore response if it's from an outdated request (stale data)
         if (currentRequestId !== requestIdRef.current) {
-          console.log('[Client2] Ignoring stale percentage response from request', currentRequestId, '(current:', requestIdRef.current, ')')
+          
           return
         }
         
@@ -1572,7 +1572,7 @@ const Client2Page = () => {
         
         // Ignore response if it's from an outdated request (stale data)
         if (currentRequestId !== requestIdRef.current) {
-          console.log('[Client2] Ignoring stale normal response from request', currentRequestId, '(current:', requestIdRef.current, ')')
+          
           return
         }
         

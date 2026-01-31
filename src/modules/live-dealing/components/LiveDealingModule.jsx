@@ -796,11 +796,6 @@ export default function LiveDealingModule() {
 
   return (
     <div className="h-screen flex flex-col bg-[#F8F8F8] overflow-x-hidden overflow-y-hidden max-w-full" style={{ height: '100dvh', width: '100vw', maxWidth: '100vw', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
-      {progressActive && (
-        <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]">
-          <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg" style={{ width: '40%', animation: 'loading 1.5s ease-in-out infinite' }} />
-        </div>
-      )}
       <div className="flex items-center px-4 py-4 bg-white border-b border-[#ECECEC] relative">
         <button 
           onClick={() => setIsSidebarOpen(true)}

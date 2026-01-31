@@ -483,13 +483,11 @@ export const DataProvider = ({ children }) => {
   // Fetch clients data (REST snapshot). Includes retry, dedup, normalization, timestamp seeding, and initial stats calculation.
   const fetchClients = useCallback(async (force = false) => {
     if (!isAuthenticated) {
-      console.log('[DataContext] Not authenticated, skipping fetchClients')
       return []
     }
 
     // Prevent concurrent fetches
     if (isFetchingClientsRef.current) {
-      console.log('[DataContext] ⚠️ fetchClients already in progress, skipping duplicate call')
       return clients
     }
 
@@ -566,7 +564,6 @@ export const DataProvider = ({ children }) => {
 
       if (!hasInitialData && data.length > 0) {
         setHasInitialData(true)
-        console.log('[DataContext] ✅ Initial clients loaded; WebSocket can connect')
       }
       return data
     } catch (err) {
@@ -585,7 +582,6 @@ export const DataProvider = ({ children }) => {
   // Fetch positions data
   const fetchPositions = useCallback(async (force = false) => {
     if (!isAuthenticated) {
-      console.log('[DataContext] Not authenticated, skipping fetchPositions')
       return []
     }
     
@@ -612,7 +608,6 @@ export const DataProvider = ({ children }) => {
   // Fetch orders data
   const fetchOrders = useCallback(async (force = false) => {
     if (!isAuthenticated) {
-      console.log('[DataContext] Not authenticated, skipping fetchOrders')
       return []
     }
     
@@ -639,7 +634,6 @@ export const DataProvider = ({ children }) => {
   // Fetch accounts data (for margin level)
   const fetchAccounts = useCallback(async (force = false) => {
     if (!isAuthenticated) {
-      console.log('[DataContext] Not authenticated, skipping fetchAccounts')
       return []
     }
     
@@ -649,9 +643,7 @@ export const DataProvider = ({ children }) => {
 
     // Accounts endpoint is not available on the backend currently.
     // Mirror fetchClients behavior: skip network call and avoid noisy retries/logs.
-    if (import.meta?.env?.VITE_DEBUG_LOGS === 'true') {
-      console.log('[DataContext] fetchAccounts skipped - endpoint not available')
-    }
+    
     setLoading(prev => ({ ...prev, accounts: false }))
     return accounts
   }, [accounts, isAuthenticated, fetchWithRetry])
@@ -660,14 +652,11 @@ export const DataProvider = ({ children }) => {
   useEffect(() => {
     // Don't connect WebSocket until we have initial data from REST API
     if (!isAuthenticated || !hasInitialData) {
-      if (isAuthenticated && !hasInitialData) {
-        console.log('[DataContext] ⏳ Waiting for initial data before connecting WebSocket...')
-      }
       return
     }
     
     // Connect WebSocket only after initial data is loaded
-    console.log('[DataContext] 🔌 Connecting WebSocket after initial data load...')
+    
     websocketService.connect()
 
     // Monitor connection state
@@ -693,7 +682,6 @@ export const DataProvider = ({ children }) => {
       
       // Log activity every 10 seconds
       if (Date.now() - lastActivityLog > 10000) {
-        console.log(`[DataContext] 📡 WebSocket active: ${totalMessagesReceived} messages in last 10s`)
         totalMessagesReceived = 0
         lastActivityLog = Date.now()
       }
@@ -701,7 +689,6 @@ export const DataProvider = ({ children }) => {
       const eventType = message.event || message.type
       if (eventType && !seenEvents.has(eventType)) {
         seenEvents.add(eventType)
-        console.log('[DataContext] 🔔 New event type:', eventType)
       }
     })
 
@@ -723,29 +710,10 @@ export const DataProvider = ({ children }) => {
           const unnormalized = rawClients // Same for both
           
           // Debug: Check RAW values BEFORE normalization
-          if (rawClients.length > 0 && rawClients[0]) {
-            const rawSample = rawClients[0]
-            console.log('[DataContext] WebSocket RAW values (before normalization):', {
-              login: rawSample.login,
-              currency: rawSample.currency,
-              dailyPnL: rawSample.dailyPnL,
-              dailyPnL_percentage: rawSample.dailyPnL_percentage,
-              thisWeekPnL_percentage: rawSample.thisWeekPnL_percentage,
-              lifetimePnL_percentage: rawSample.lifetimePnL_percentage
-            })
-          }
+          
           
           // Debug: Check AFTER normalization
-          if (normalized.length > 0 && normalized[0]) {
-            const sample = normalized[0]
-            console.log('[DataContext] WebSocket AFTER normalization:', {
-              login: sample.login,
-              dailyPnL: sample.dailyPnL,
-              dailyPnL_percentage: sample.dailyPnL_percentage,
-              thisWeekPnL_percentage: sample.thisWeekPnL_percentage,
-              lifetimePnL_percentage: sample.lifetimePnL_percentage
-            })
-          }
+          
           
           const map = new Map()
           const rawMap = new Map()
@@ -955,7 +923,7 @@ export const DataProvider = ({ children }) => {
       if (batchSize > 200 || totalProcessed % 1000 === 0) {
         const latency = batchMaxTimestamp > 0 ? Math.floor((Date.now() - batchMaxTimestamp) / 1000) : 0
         const processingTime = Math.round(performance.now() - startTime)
-        console.log(`[DataContext] 📦 ${batchSize} updates in ${processingTime}ms (Total: ${totalProcessed}, Lag: ${latency}s)`)
+        
       }
 
       // Emit perf stats (rate-limited to 500ms)
@@ -1367,7 +1335,7 @@ export const DataProvider = ({ children }) => {
         
         // Log every 5 seconds to confirm we're receiving updates
         if (Date.now() - lastUpdateLog > 5000) {
-          console.log(`[DataContext] ✅ Receiving updates: ${updateCount} in last 5s`)
+          
           updateCount = 0
           lastUpdateLog = Date.now()
         }
@@ -1435,7 +1403,7 @@ export const DataProvider = ({ children }) => {
         const newUser = message.data
         const userLogin = message.login || newUser?.login
         
-        console.log('[DataContext] 👤 USER_ADDED:', userLogin, newUser)
+        
         
         if (newUser && userLogin) {
           // Normalize USC currency values
@@ -1444,10 +1412,10 @@ export const DataProvider = ({ children }) => {
           setClients(prev => {
             const exists = Array.isArray(prev) && prev.some(c => c && c.login === userLogin)
             if (exists) {
-              console.log('[DataContext] ⚠️ User already exists, skipping add:', userLogin)
+              
               return prev
             }
-            console.log('[DataContext] ➕ Adding NEW user to clients:', userLogin)
+            
             
             // Initialize signature tracking for new user
             const signature = [
@@ -1664,7 +1632,7 @@ export const DataProvider = ({ children }) => {
         const deletedUser = message.data
         const userLogin = message.login || deletedUser?.login
         
-        console.log('[DataContext] 👤 USER_DELETED:', userLogin)
+        
         
         if (userLogin) {
           // Remove from signature tracking
@@ -1678,7 +1646,7 @@ export const DataProvider = ({ children }) => {
             
             const filtered = prev.filter(c => c.login !== userLogin)
             if (filtered.length < prev.length) {
-              console.log('[DataContext] ➖ Removed user from clients:', userLogin)
+              
               
               // Subtract deleted client's values from stats
               if (deletedClient) {
@@ -1713,7 +1681,7 @@ export const DataProvider = ({ children }) => {
       try {
         const newPositions = data.data?.positions || data.positions
         if (newPositions && Array.isArray(newPositions)) {
-          console.log('[DataContext] 📦 Full positions snapshot received:', newPositions.length, 'positions')
+          
           lowPriority(() => setPositions(newPositions))
           lowPriority(() => setLastFetch(prev => ({ ...prev, positions: Date.now() })))
         }
@@ -1728,12 +1696,12 @@ export const DataProvider = ({ children }) => {
         const position = message.data || message
         if (position) {
           const posId = position.position || position.id
-          console.log('[DataContext] ➕ POSITION_OPENED:', posId, 'Login:', position.login, 'Symbol:', position.symbol)
+          
           lowPriority(() => setPositions(prev => {
             // Check if position already exists
             const exists = prev.some(p => (p.position || p.id) === posId)
             if (exists) {
-              console.log('[DataContext] ⚠️ Position already exists, skipping add:', posId)
+              
               return prev
             }
             return [position, ...prev]
@@ -1751,12 +1719,12 @@ export const DataProvider = ({ children }) => {
         const posId = updatedPos?.position || updatedPos?.id
         
         if (posId) {
-          console.log('[DataContext] ✏️ POSITION_UPDATED:', posId, 'Profit:', updatedPos.profit, 'Volume:', updatedPos.volume)
+          
           lowPriority(() => setPositions(prev => {
             const index = prev.findIndex(p => (p.position || p.id) === posId)
             if (index === -1) {
               // Position doesn't exist, add it
-              console.log('[DataContext] ⚠️ Position not found, adding it:', posId)
+              
               return [updatedPos, ...prev]
             }
             const updated = [...prev]
@@ -1775,7 +1743,7 @@ export const DataProvider = ({ children }) => {
         const position = message.data || message
         if (position) {
           const posId = position.position || position.id
-          console.log('[DataContext] ➕ POSITION_ADDED (legacy):', posId)
+          
           lowPriority(() => setPositions(prev => {
             const exists = prev.some(p => (p.position || p.id) === posId)
             if (exists) return prev
@@ -1831,14 +1799,14 @@ export const DataProvider = ({ children }) => {
       try {
         const posId = message.position || message.data?.position || message.id
         if (posId) {
-          console.log('[DataContext] ❌ POSITION_CLOSED:', posId)
+          
           lowPriority(() => setPositions(prev => {
             const newPositions = prev.filter(p => (p.position || p.id) !== posId)
             if (newPositions.length === prev.length) {
-              console.log('[DataContext] ⚠️ Position not found for closure:', posId)
+              
               return prev // Return same reference
             }
-            console.log('[DataContext] ✅ Position closed. Count:', prev.length, '→', newPositions.length)
+            
             return newPositions
           }))
         }
@@ -1852,11 +1820,11 @@ export const DataProvider = ({ children }) => {
       try {
         const posId = message.position || message.data?.position || message.id
         if (posId) {
-          console.log('[DataContext] ❌ POSITION_DELETED (legacy):', posId)
+          
           lowPriority(() => setPositions(prev => {
             const newPositions = prev.filter(p => (p.position || p.id) !== posId)
             if (newPositions.length === prev.length) return prev
-            console.log('[DataContext] ✅ Position removed. Count:', prev.length, '→', newPositions.length)
+            
             return newPositions
           }))
         }
@@ -2045,7 +2013,7 @@ export const DataProvider = ({ children }) => {
     
     // Prevent duplicate initial sync (React StrictMode calls effects twice in dev)
     if (hasInitialSyncedRef.current) {
-      console.log('[DataContext] ⚠️ Initial sync already completed, skipping duplicate')
+      
       return
     }
     
@@ -2085,13 +2053,13 @@ export const DataProvider = ({ children }) => {
 
         // Success criteria: sync attempt completed
         if (fetchedClients.length > 0) {
-          console.log(`[DataContext] ✅ Initial sync successful`)
+          
           break
         }
         
         if (attempt < maxAttempts) {
           const backoff = 800 * attempt
-          console.log(`[DataContext] ⚠️ Retrying initial sync after ${backoff}ms (attempt ${attempt + 1}/${maxAttempts})`)
+          
           await new Promise(res => setTimeout(res, backoff))
         }
       }
@@ -2099,7 +2067,7 @@ export const DataProvider = ({ children }) => {
       // Mark initial data ready after sync attempts
       if (!hasInitialData) {
         setHasInitialData(true)
-        console.log('[DataContext] 🔌 Initial data ready, WebSocket can now connect')
+        
       }
     }
     
@@ -2122,16 +2090,16 @@ export const DataProvider = ({ children }) => {
   // Monitor lag and auto-reconnect with fresh data when lag exceeds threshold
   useEffect(() => {
     if (!isAuthenticated || !hasInitialData) {
-      console.log('[DataContext] Lag monitor disabled:', { isAuthenticated, hasInitialData })
+      
       return
     }
     
-    console.log('[DataContext] 🔍 Lag monitor started - will check every 5s and reconnect if lag is >= 100s (100 seconds or more)')
+    
     
     const lagCheckInterval = setInterval(() => {
       const currentLag = latestMeasuredLagRef.current
       const lagSeconds = currentLag ? Math.floor(currentLag / 1000) : 0
-      console.log(`[DataContext] Lag check: ${lagSeconds}s (threshold: 100s, reconnecting: ${isReconnectingRef.current})`)
+      
       
       // Check if lag exceeds threshold
       if (currentLag && currentLag >= LAG_THRESHOLD_MS && !isReconnectingRef.current) {
@@ -2149,13 +2117,13 @@ export const DataProvider = ({ children }) => {
           fetchOrders(true).catch(err => console.error('[DataContext] Lag recovery: fetchOrders failed:', err)),
           fetchAccounts(true).catch(err => console.error('[DataContext] Lag recovery: fetchAccounts failed:', err))
         ]).then(() => {
-          console.log('[DataContext] ✅ Fresh data loaded, reconnecting WebSocket...')
+          
           
           // Wait a moment for data to settle, then reconnect WebSocket
           setTimeout(() => {
             websocketService.connect()
             isReconnectingRef.current = false
-            console.log('[DataContext] ✅ WebSocket reconnected after lag recovery')
+            
           }, 1000)
         }).catch(err => {
           console.error('[DataContext] ❌ Lag recovery failed:', err)
