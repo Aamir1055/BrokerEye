@@ -326,33 +326,26 @@ const Client2Page = () => {
     localStorage.setItem('client2ColumnWidths', JSON.stringify(columnWidths))
   }, [columnWidths])
 
-  // Debounce search input for server-side filtering
+  // Server-side value search only when committed (Enter)
   useEffect(() => {
     const timers = {}
 
-    Object.keys(columnValueSearch).forEach(columnKey => {
-      const searchQuery = columnValueSearch[columnKey] || ''
-      const previousQuery = columnValueSearchDebounce[columnKey] || ''
+    Object.keys(columnValueSearchDebounce).forEach(columnKey => {
+      const searchQuery = columnValueSearchDebounce[columnKey] || ''
 
-      // Only trigger if search changed
-      if (searchQuery !== previousQuery) {
-        if (timers[columnKey]) clearTimeout(timers[columnKey])
-
-        timers[columnKey] = setTimeout(() => {
-          setColumnValueSearchDebounce(prev => ({ ...prev, [columnKey]: searchQuery }))
-
-          // Reset and fetch with new search query
-          setColumnValues(prev => ({ ...prev, [columnKey]: [] }))
-          setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
-          fetchColumnValuesWithSearch(columnKey, searchQuery, true)
-        }, 500) // 500ms debounce
-      }
+      if (timers[columnKey]) clearTimeout(timers[columnKey])
+      timers[columnKey] = setTimeout(() => {
+        // Reset and fetch with committed search query
+        setColumnValues(prev => ({ ...prev, [columnKey]: [] }))
+        setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
+        fetchColumnValuesWithSearch(columnKey, searchQuery, true)
+      }, 0)
     })
 
     return () => {
       Object.values(timers).forEach(timer => clearTimeout(timer))
     }
-  }, [columnValueSearch])
+  }, [columnValueSearchDebounce])
 
   const columnSelectorRef = useRef(null)
   const filterMenuRef = useRef(null)
@@ -2060,7 +2053,7 @@ const Client2Page = () => {
     })
   }
 
-  const clearColumnFilter = (columnKey) => {
+  const clearColumnFilter = (columnKey, closeDropdown = true) => {
     // Invalidate any in-flight requests from previous filter state
     requestIdRef.current++
     pausePollingUntilRef.current = Date.now() + 1200
@@ -2084,7 +2077,9 @@ const Client2Page = () => {
       }))
     }
     clearSort(columnKey)
-    setShowFilterDropdown(null)
+    if (closeDropdown) {
+      setShowFilterDropdown(null)
+    }
     console.log('[Client2] ✅ Checkbox filter cleared (client-side filtering updated)')
   }
 
@@ -2786,7 +2781,7 @@ const Client2Page = () => {
   }
 
   // Apply checkbox filter - builds server-side filters using proper API format
-  const applyCheckboxFilter = (columnKey) => {
+  const applyCheckboxFilter = (columnKey, closeDropdown = true) => {
     const selected = selectedColumnValues[columnKey] || []
 
     console.log('[Client2] ========================================')
@@ -2798,11 +2793,13 @@ const Client2Page = () => {
 
     if (selected.length === 0) {
       console.log('[Client2] No values selected, clearing filter')
-      clearColumnFilter(columnKey)
+      clearColumnFilter(columnKey, closeDropdown)
       return
     }
 
-    setShowFilterDropdown(null)
+    if (closeDropdown) {
+      setShowFilterDropdown(null)
+    }
     setCurrentPage(1)
 
     // Invalidate any in-flight requests from previous filter state
@@ -5042,10 +5039,9 @@ const Client2Page = () => {
                                         onKeyDown={(e) => {
                                           if (e.key === 'Enter') {
                                             e.preventDefault()
-                                            // Do not auto-apply numeric filters on Enter; require explicit OK
+                                            // For checkbox filters, apply selections but keep dropdown open
                                             if (!isNumeric) {
-                                              applyCheckboxFilter(columnKey)
-                                              setShowFilterDropdown(null)
+                                              applyCheckboxFilter(columnKey, false)
                                             }
                                           }
                                         }}
@@ -5469,20 +5465,7 @@ const Client2Page = () => {
 
                                               {/* Footer actions (hidden when inline submenu open) */}
                                               {(openNumberFilterColumn !== columnKey && openTextFilterColumn !== columnKey && !(isNumeric && !((columnValues[columnKey]||[]).length))) && (
-                                                <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
-                                               
-                                                  {(columnValues[columnKey]||[]).length > 0 && (
-                                                    <button
-                                                      onClick={() => {
-                                                        applyCheckboxFilter(columnKey)
-                                                        setShowFilterDropdown(null)
-                                                      }}
-                                                      className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
-                                                    >
-                                                      OK
-                                                    </button>
-                                                  )}
-                                                </div>
+                                                <></>
                                               )}
                                             </>
                                           )
@@ -5501,7 +5484,7 @@ const Client2Page = () => {
                                           const selected = selectedColumnValues[columnKey] || []
                                           const searchQuery = columnValueSearch[columnKey] || ''
 
-                                          // Values are already filtered server-side based on search
+                                          // Values are already fetched server-side based on search commit; no client-side filter
                                           const filteredValues = allValues
 
                                           return (
@@ -5530,8 +5513,13 @@ const Client2Page = () => {
 
                                               {/* Text Filters Section */}
                                               <div className="px-3 py-2 border-b border-gray-200">
-                                                {allValues.length > 0 ? (
-                                                  // Collapsible version when there are checkbox values - opens to the right
+                                                {(() => {
+                                                  // Always show collapsible right-opening version for these columns
+                                                  const alwaysCollapsible = ['login', 'name', 'email', 'phone', 'processorType', 'accountType'].includes(columnKey)
+                                                  const shouldCollapse = allValues.length > 0 || alwaysCollapsible
+                                                  
+                                                  return shouldCollapse ? (
+                                                  // Collapsible version when there are checkbox values OR for specific columns - opens to the right
                                                     <div className="relative">
                                                     <button
                                                       onClick={() => {
@@ -5735,7 +5723,8 @@ const Client2Page = () => {
                                                       )
                                                     })()}
                                                   </div>
-                                                )}
+                                                  )
+                                                })()}
                                               </div>
 
                                               {/* Checkbox Value List */}
@@ -5749,27 +5738,39 @@ const Client2Page = () => {
                                                 )}
 
                                                 {/* Search Bar */}
-                                                {allValues.length > 0 && (
+                                                (
                                                   <div className="px-3 py-2 border-b border-gray-200">
-                                                    <input
-                                                      type="text"
-                                                      placeholder="Search values..."
-                                                      value={searchQuery}
-                                                      onChange={(e) => setColumnValueSearch(prev => ({ ...prev, [columnKey]: e.target.value }))}
-                                                      onKeyDown={(e) => {
-                                                        if (e.key === 'Enter') {
-                                                          e.preventDefault()
-                                                          applyCheckboxFilter(columnKey)
-                                                          setShowFilterDropdown(null)
-                                                        }
-                                                      }}
-                                                      className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
-                                                    />
+                                                    <div className="relative">
+                                                      <svg className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                      </svg>
+                                                      <input
+                                                        type="text"
+                                                        placeholder="Search values..."
+                                                        value={searchQuery}
+                                                        onChange={(e) => setColumnValueSearch(prev => ({ ...prev, [columnKey]: e.target.value }))}
+                                                        onKeyDown={(e) => {
+                                                          if (e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            const committed = columnValueSearch[columnKey] || ''
+                                                            setColumnValueSearchDebounce(prev => ({ ...prev, [columnKey]: committed }))
+                                                            // Reset and fetch with committed query; keep dropdown open
+                                                            setColumnValues(prev => ({ ...prev, [columnKey]: [] }))
+                                                            setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
+                                                            fetchColumnValuesWithSearch(columnKey, committed, true)
+                                                            // Also apply current checkbox selections without closing
+                                                            applyCheckboxFilter(columnKey, false)
+                                                          }
+                                                        }}
+                                                        className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                      />
+                                                    </div>
                                                   </div>
-                                                )}
+                                                )
 
                                                 {/* Select Visible and Values List */}
-                                                {allValues.length > 0 && (
+                                                (
                                                   <>
                                                     {/* Select Visible Checkbox */}
                                                     {columnValuesUnsupported[columnKey] ? null : (
@@ -5840,50 +5841,51 @@ const Client2Page = () => {
                                                       <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                                                       <p className="text-sm text-gray-600 mt-3">Loading filter values...</p>
                                                     </div>
-                                                  ) : (
-                                                    <>
-                                                      {filteredValues.length > 0 ? (
-                                                        <div className="space-y-1">
-                                                          {filteredValues.map((value) => (
-                                                            <label key={value} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
-                                                              <input
-                                                                type="checkbox"
-                                                                checked={selected.includes(value)}
-                                                                onChange={() => toggleColumnValue(columnKey, value)}
-                                                                className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                              />
-                                                              <span className="text-xs text-gray-700">{value}</span>
-                                                            </label>
-                                                          ))}
-                                                          {/* Loading more indicator */}
-                                                          {columnValuesLoadingMore[columnKey] && (
-                                                            <div className="py-4 text-center">
-                                                              <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                                                              <p className="text-xs text-gray-500 mt-1">Loading more...</p>
-                                                            </div>
-                                                          )}
-                                                          {/* No more values indicator */}
-                                                          {!columnValuesHasMore[columnKey] && allValues.length > 0 && (
-                                                            <div className="py-2 text-xs text-gray-400 text-center italic">
-                                                              All values loaded
-                                                            </div>
-                                                          )}
-                                                        </div>
-                                                      ) : (
-                                                        <div className="py-8 text-xs text-gray-500 text-center">
-                                                          {searchQuery ? 'No matching values found' : 'No values available'}
+                                                  ) : filteredValues.length > 0 ? (
+                                                    <div className="space-y-1">
+                                                      {filteredValues.map((value) => (
+                                                        <label key={value} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
+                                                          <input
+                                                            type="checkbox"
+                                                            checked={selected.includes(value)}
+                                                            onChange={() => toggleColumnValue(columnKey, value)}
+                                                            className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                          />
+                                                          <span className="text-xs text-gray-700">{value}</span>
+                                                        </label>
+                                                      ))}
+                                                      {/* Loading more indicator */}
+                                                      {columnValuesLoadingMore[columnKey] && (
+                                                        <div className="py-4 text-center">
+                                                          <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                                          <p className="text-xs text-gray-500 mt-1">Loading more...</p>
                                                         </div>
                                                       )}
-                                                    </>
+                                                      {/* No more values indicator */}
+                                                      {!columnValuesHasMore[columnKey] && allValues.length > 0 && (
+                                                        <div className="py-2 text-xs text-gray-400 text-center italic">
+                                                          All values loaded
+                                                        </div>
+                                                      )}
+                                                    </div>
+                                                  ) : (
+                                                    <div className="flex items-center justify-center h-full min-h-[200px]">
+                                                      <div className="text-center">
+                                                        <svg className="w-12 h-12 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                        </svg>
+                                                        <p className="text-sm font-medium text-gray-500">No values found</p>
+                                                        <p className="text-xs text-gray-400 mt-1">{searchQuery ? 'Try a different search' : 'No data available'}</p>
+                                                      </div>
+                                                    </div>
                                                   )}
                                                 </div>
                                                   </>
-                                                )}
+                                                )
                                               </div>
 
-                                              {/* Footer actions (hidden when inline submenu open) */}
-                                              {(openNumberFilterColumn !== columnKey && openTextFilterColumn !== columnKey) && (
-                                                <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
+                                              {/* Footer actions - always visible even when condition panel open */}
+                                              <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
                                                   <button
                                                     onClick={() => setShowFilterDropdown(null)}
                                                     className={allValues.length > 0 ? "flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300" : "w-full px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"}
@@ -5902,7 +5904,6 @@ const Client2Page = () => {
                                                     </button>
                                                   )}
                                                 </div>
-                                              )}
                                             </>
                                           )
                                         })()}
