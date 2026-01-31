@@ -999,7 +999,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             {netPositionColumns.netType && (
               <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('netType')}>
                 <div className="flex items-center gap-1">
-                  Net Type
+                  NET Type
                   {sortConfig.key === 'netType' && (
                     <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
                   )}
@@ -1019,7 +1019,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             {netPositionColumns.avgPrice && (
               <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('avgPrice')}>
                 <div className="flex items-center gap-1">
-                  Avg Open Price
+                  Avg Price
                   {sortConfig.key === 'avgPrice' && (
                     <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
                   )}
@@ -1029,7 +1029,7 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             {netPositionColumns.profit && (
               <th className="px-3 py-2 text-left text-xs font-medium text-white cursor-pointer select-none" onClick={() => handleSort('profit')}>
                 <div className="flex items-center gap-1">
-                  Profit
+                  Total Profit
                   {sortConfig.key === 'profit' && (
                     <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
                   )}

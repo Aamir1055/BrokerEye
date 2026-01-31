@@ -133,17 +133,17 @@ export default function PositionModule() {
     phone: false,
     position: false,
     symbol: true,
-    action: false,
-    netType: true,
-    volume: false,
+    action: true,
+    netType: false,
+    volume: true,
     volumePercentage: false,
     priceOpen: true,
     priceCurrent: false,
-    netVolume: true,
+    netVolume: false,
     sl: false,
     tp: false,
-    profit: false,
-    totalProfit: true,
+    profit: true,
+    totalProfit: false,
     profitPercentage: false,
     storage: false,
     storagePercentage: false,
@@ -829,6 +829,22 @@ export default function PositionModule() {
         return (
           <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>
             {formatNum(pos.commission_usd || 0)}
+          </div>
+        )
+      case 'profit':
+        return (
+          <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>
+            <span className={`font-semibold ${pos.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatNum(pos.profit || 0)}
+            </span>
+          </div>
+        )
+      case 'totalProfit':
+        return (
+          <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>
+            <span className={`font-semibold ${pos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatNum(pos.totalProfit || 0)}
+            </span>
           </div>
         )
       case 'login':
