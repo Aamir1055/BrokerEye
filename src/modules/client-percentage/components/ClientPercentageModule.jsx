@@ -189,9 +189,8 @@ export default function ClientPercentageModule() {
 
       // Normalize nested API shape: response.data?.data
       const payload = response?.data?.data || response?.data || {}
-      try {
-        console.log('[ClientPercentage] fetch', { page, params, parsedTotal: payload?.total, count: Array.isArray(payload?.clients) ? payload.clients.length : 0 })
-      } catch {}
+      // Debug log (can be commented out in production)
+      // console.log('[ClientPercentage] fetch', { page, params, parsedTotal: payload?.total, count: Array.isArray(payload?.clients) ? payload.clients.length : 0 })
       const clientsData = payload?.clients || []
       setClients(clientsData)
       setStats({

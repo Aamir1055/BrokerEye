@@ -831,7 +831,13 @@ export default function PositionModule() {
       case 'volumePercentage':
         return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.volumePercentage || 0)}%</div>
       case 'profit':
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.profit_usd || 0)}</div>
+        return (
+          <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>
+            <span className={`font-semibold ${(pos.profit_usd || pos.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatNum(pos.profit_usd || pos.profit || 0)}
+            </span>
+          </div>
+        )
       case 'profitPercentage':
         return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.profitPercentage || 0)}%</div>
       case 'storage':
@@ -854,18 +860,10 @@ export default function PositionModule() {
             {formatNum(pos.commission_usd || 0)}
           </div>
         )
-      case 'profit':
-        return (
-          <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>
-            <span className={`font-semibold ${pos.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {formatNum(pos.profit || 0)}
-            </span>
-          </div>
-        )
       case 'totalProfit':
         return (
           <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>
-            <span className={`font-semibold ${pos.totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <span className={`font-semibold ${(pos.totalProfit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {formatNum(pos.totalProfit || 0)}
             </span>
           </div>
