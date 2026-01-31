@@ -95,14 +95,14 @@ export default function LiveDealingModule() {
     time: true,
     login: true,
     symbol: true,
-    netType: true,
+    action: true,
+    netType: false,
     netVolume: true,
     averagePrice: true,
     totalProfit: false,
     commission: false,
     storage: false,
     appliedPercentage: false,
-    action: false,
     deal: false,
     entry: false
   })
@@ -533,9 +533,10 @@ export default function LiveDealingModule() {
 
   // Get visible columns
   const allColumns = [
-    { key: 'login', label: 'Login', width: '80px', sticky: true },
-    { key: 'symbol', label: 'Symbol', width: '90px' },
     { key: 'time', label: 'Time', width: '155px' },
+    { key: 'login', label: 'Login', width: '80px' },
+    { key: 'symbol', label: 'Symbol', width: '90px' },
+    { key: 'action', label: 'Action', width: '80px' },
     { key: 'netType', label: 'Net Type', width: '80px' },
     { key: 'netVolume', label: displayMode === 'percentage' ? 'Net Volume (%)' : displayMode === 'both' ? 'Net Volume (Both)' : 'Net Volume', width: '100px' },
     { key: 'averagePrice', label: 'Average Price', width: '110px' },
@@ -543,7 +544,6 @@ export default function LiveDealingModule() {
     { key: 'commission', label: displayMode === 'percentage' ? 'Commission (%)' : displayMode === 'both' ? 'Commission (Both)' : 'Commission', width: '100px' },
     { key: 'storage', label: displayMode === 'percentage' ? 'Storage (%)' : displayMode === 'both' ? 'Storage (Both)' : 'Storage', width: '90px' },
     { key: 'appliedPercentage', label: 'Applied %', width: '90px' },
-    { key: 'action', label: 'Action', width: '80px' },
     { key: 'deal', label: 'Deal', width: '80px' },
     { key: 'entry', label: 'Entry', width: '80px' }
   ]
@@ -764,8 +764,29 @@ export default function LiveDealingModule() {
         value = deal.rawData?.symbol || '-'
         break
       case 'action':
-        value = deal.rawData?.action || '-'
-        break
+        const actionValue = deal.rawData?.action || '-'
+        const actionLowerCase = actionValue.toLowerCase()
+        return (
+          <div 
+            className={`h-[28px] flex items-center justify-start px-1 ${isSticky ? 'sticky left-0 bg-white z-10' : ''}`}
+            style={{
+              border: 'none', 
+              outline: 'none', 
+              boxShadow: isSticky ? '2px 0 4px rgba(0,0,0,0.05)' : 'none'
+            }}
+          >
+            <span className={`px-2 py-0.5 rounded text-[9px] font-semibold ${
+              actionLowerCase === 'buy' ? 'bg-green-100 text-green-700' : 
+              actionLowerCase === 'sell' ? 'bg-red-100 text-red-700' : 
+              actionLowerCase === 'balance' ? 'bg-blue-100 text-blue-700' :
+              actionLowerCase === 'commission' ? 'bg-yellow-100 text-yellow-700' :
+              actionLowerCase === 'bonus' ? 'bg-pink-100 text-pink-700' :
+              'bg-gray-100 text-gray-700'
+            }`}>
+              {actionValue.toUpperCase()}
+            </span>
+          </div>
+        )
       case 'deal':
         value = deal.rawData?.deal || deal.id || '-'
         break

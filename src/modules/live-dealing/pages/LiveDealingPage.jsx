@@ -2302,7 +2302,15 @@ const LiveDealingPage = () => {
                           <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
                             deal.rawData?.action === 'BUY' 
                               ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
+                              : deal.rawData?.action === 'SELL'
+                              ? 'bg-red-100 text-red-800'
+                              : deal.rawData?.action === 'BALANCE'
+                              ? 'bg-blue-100 text-blue-700'
+                              : deal.rawData?.action === 'COMMISSION'
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : deal.rawData?.action === 'BONUS'
+                              ? 'bg-pink-100 text-pink-700'
+                              : 'bg-gray-100 text-gray-700'
                           }`}>
                             {deal.rawData?.action || '-'}
                           </span>
