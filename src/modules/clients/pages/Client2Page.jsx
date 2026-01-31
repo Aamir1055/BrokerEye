@@ -343,10 +343,10 @@ const Client2Page = () => {
             delete newState[columnKey]
             return newState
           })
-          // Reset to show all initial values
+          // Reset and fetch full values (no search)
           setColumnValues(prev => ({ ...prev, [columnKey]: [] }))
           setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
-          fetchColumnValuesWithSearch(columnKey, '', true)
+          fetchColumnValues(columnKey, true)
         } else {
           setColumnValueSearchDebounce(prev => ({ ...prev, [columnKey]: searchQuery }))
         }
@@ -2452,7 +2452,6 @@ const Client2Page = () => {
 
   // Fetch column values with search filter (server-side search using dedicated endpoint)
   const fetchColumnValuesWithSearch = async (columnKey, searchQuery = '', forceRefresh = false) => {
-    setProgressActive(true)
     // Allow API calls for a broader set of text columns to ensure filtering works across more fields
     const allowedColumns = [
       // Identifiers
@@ -2478,10 +2477,18 @@ const Client2Page = () => {
       return
     }
 
+    // If search is empty, fetch full list using fields API
+    if (!searchQuery || !searchQuery.trim()) {
+      await fetchColumnValues(columnKey, true)
+      return
+    }
+
     // Don't fetch if already loading
     if (columnValuesLoading[columnKey]) return
     // Skip for unsupported fields
     if (columnValuesUnsupported[columnKey]) return
+
+    setProgressActive(true)
 
     setColumnValuesLoading(prev => ({ ...prev, [columnKey]: true }))
     setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
@@ -5754,17 +5761,16 @@ const Client2Page = () => {
                                               {/* Checkbox Value List */}
                                               <div className="flex-1 overflow-hidden flex flex-col">
                                                 {/* Search Bar */}
-                                                {allValues.length > 0 && (
-                                                  <div className="px-3 py-2 border-b border-gray-200">
-                                                    <div className="relative">
-                                                      <svg className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                                      </svg>
-                                                      <input
-                                                        type="text"
-                                                        placeholder="Search values..."
-                                                        value={searchQuery}
-                                                        onChange={(e) => setColumnValueSearch(prev => ({ ...prev, [columnKey]: e.target.value }))}
+                                                <div className="px-3 py-2 border-b border-gray-200">
+                                                  <div className="relative">
+                                                    <svg className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                    </svg>
+                                                    <input
+                                                      type="text"
+                                                      placeholder="Search values..."
+                                                      value={searchQuery}
+                                                      onChange={(e) => setColumnValueSearch(prev => ({ ...prev, [columnKey]: e.target.value }))}
                                                         onKeyDown={(e) => {
                                                           if (e.key === 'Enter') {
                                                             e.preventDefault();
@@ -5779,43 +5785,64 @@ const Client2Page = () => {
                                                             applyCheckboxFilter(columnKey, false)
                                                           }
                                                         }}
-                                                        className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
+                                                        className="w-full pl-7 pr-8 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
                                                       />
+                                                    {searchQuery && searchQuery.trim() !== '' && (
+                                                      <button
+                                                        onClick={() => {
+                                                          // Clear the search and immediately fetch all values
+                                                          setColumnValueSearch(prev => ({ ...prev, [columnKey]: '' }))
+                                                          setColumnValueSearchDebounce(prev => {
+                                                            const newState = { ...prev }
+                                                            delete newState[columnKey]
+                                                            return newState
+                                                          })
+                                                          // Reset and fetch all values
+                                                          setColumnValues(prev => ({ ...prev, [columnKey]: [] }))
+                                                          setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
+                                                          fetchColumnValues(columnKey, true)
+                                                        }}
+                                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+                                                        aria-label="Clear search"
+                                                      >
+                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                      </button>
+                                                    )}
                                                     </div>
                                                   </div>
-                                                )}
 
                                                 {/* Select Visible and Values List */}
-                                                {allValues.length > 0 && (
-                                                  <>
-                                                    {/* Select Visible Checkbox */}
-                                                    {columnValuesUnsupported[columnKey] ? null : (
-                                                      <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
-                                                        {(() => {
-                                                          const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
-                                                          const visibleVals = searchQ ? allValues.filter(v => String(v).toLowerCase().includes(searchQ)) : allValues
-                                                          const allVisibleSelected = visibleVals.length > 0 && visibleVals.every(v => selected.includes(v))
-                                                          const hasActiveSearch = searchQuery && searchQuery.trim().length > 0
-                                                          return (
-                                                            <>
-                                                              <label className="flex items-center gap-2 cursor-pointer">
-                                                                <input
-                                                                  type="checkbox"
-                                                                  checked={allVisibleSelected}
-                                                                  onChange={() => toggleSelectVisibleColumnValues(columnKey)}
-                                                                  className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                                />
-                                                                <span className="text-xs font-bold text-gray-700">Select visible ({visibleVals.length})</span>
-                                                              </label>
-                                                            </>
-                                                          )
-                                                        })()}
-                                                      </div>
-                                                    )}
+                                                <>
+                                                  {/* Select Visible Checkbox */}
+                                                  {columnValuesUnsupported[columnKey] || allValues.length === 0 ? null : (
+                                                    <div className="px-3 py-2 border-b border-gray-200 bg-gray-50">
+                                                      {(() => {
+                                                        const searchQ = (columnValueSearch[columnKey] || '').toLowerCase()
+                                                        const visibleVals = searchQ ? allValues.filter(v => String(v).toLowerCase().includes(searchQ)) : allValues
+                                                        const allVisibleSelected = visibleVals.length > 0 && visibleVals.every(v => selected.includes(v))
+                                                        const hasActiveSearch = searchQuery && searchQuery.trim().length > 0
+                                                        return (
+                                                          <>
+                                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                              <input
+                                                                type="checkbox"
+                                                                checked={allVisibleSelected}
+                                                                onChange={() => toggleSelectVisibleColumnValues(columnKey)}
+                                                                className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                              />
+                                                              <span className="text-xs font-bold text-gray-700">Select visible ({visibleVals.length})</span>
+                                                            </label>
+                                                          </>
+                                                        )
+                                                      })()}
+                                                    </div>
+                                                  )}
 
-                                                    {/* Values List - Lazy loading with scroll detection */}
-                                                    <div
-                                                      className="flex-1 overflow-y-auto px-3 py-2"
+                                                  {/* Values List - Lazy loading with scroll detection */}
+                                                  <div
+                                                    className="flex-1 overflow-y-auto px-3 py-2"
                                                   onWheel={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onTouchMove={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onMouseDown={() => { columnScrollUserActionRef.current[columnKey] = true }}
@@ -5896,8 +5923,7 @@ const Client2Page = () => {
                                                     </div>
                                                   )}
                                                 </div>
-                                                  </>
-                                                )}
+                                                </>
                                               </div>
 
                                               {/* Footer actions - always visible even when condition panel open */}
