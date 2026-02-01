@@ -1937,7 +1937,7 @@ export default function Client2Module() {
               <div className="relative h-12">
                 <input
                   type="text"
-                  placeholder="Search Columns"
+                  placeholder="Search columns..."
                   value={columnSearch}
                   onChange={(e) => setColumnSearch(e.target.value)}
                   className="w-full h-12 pl-12 pr-4 bg-gray-100 border-0 rounded-xl text-[10px] text-black font-normal font-outfit placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -1952,6 +1952,25 @@ export default function Client2Module() {
                   <circle cx="8.5" cy="8.5" r="5.75" stroke="currentColor" strokeWidth="1.5"/>
                   <path d="M13 13L17 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
+              </div>
+              <div className="mt-3">
+                {(() => {
+                  const allSelected = Object.values(visibleColumns || {}).every(v => !!v)
+                  return (
+                    <button
+                      onClick={() => {
+                        setVisibleColumns(prev => {
+                          const next = {}
+                          Object.keys(prev).forEach(k => { next[k] = !allSelected })
+                          return next
+                        })
+                      }}
+                      className="text-sm font-semibold text-pink-600 hover:text-pink-700"
+                    >
+                      {allSelected ? 'Hide All' : 'Show All'}
+                    </button>
+                  )
+                })()}
               </div>
             </div>
 
@@ -2028,19 +2047,15 @@ export default function Client2Module() {
                 filteredEntries.map(([label, key]) => (
                   <label 
                     key={key} 
-                    className="flex items-center justify-between py-3 border-b border-[#F2F2F7] last:border-0"
+                    className="flex items-center gap-3 px-1 py-2 border-b border-[#F2F2F7] last:border-0 hover:bg-gray-50 cursor-pointer"
                   >
-                    <span className="text-sm text-[#000000] font-outfit">{label}</span>
-                    <div className="relative inline-block w-12 h-6">
-                      <input
-                        type="checkbox"
-                        checked={visibleColumns[key]}
-                        onChange={() => setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }))}
-                        className="sr-only peer"
-                      />
-                      <div className="w-12 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
-                      <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-6"></div>
-                    </div>
+                    <input
+                      type="checkbox"
+                      checked={!!visibleColumns[key]}
+                      onChange={() => setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }))}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-[#111827] font-outfit">{label}</span>
                   </label>
                 ))
               ) : (

@@ -583,12 +583,21 @@ const Client2Page = () => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
-        // Check if saved columns have the required new columns (accountType, processorType, lifetimePnL)
-        // If they're missing, use new defaults instead
+        // Ensure the seven default columns are visible at initial load
+        const requiredDefaults = ['login','name','equity','profit','lifetimePnL','accountType','processorType']
+        let mutated = false
+        requiredDefaults.forEach(k => {
+          if (parsed[k] !== true) { parsed[k] = true; mutated = true }
+        })
+        // If critical keys are missing entirely, reset to new defaults
         if (!parsed.hasOwnProperty('accountType') || !parsed.hasOwnProperty('processorType') || !parsed.hasOwnProperty('lifetimePnL')) {
-          
           localStorage.removeItem('client2PageVisibleColumns')
-          return getDefaultColumns()
+          const defs = getDefaultColumns()
+          localStorage.setItem('client2PageVisibleColumns', JSON.stringify(defs))
+          return defs
+        }
+        if (mutated) {
+          localStorage.setItem('client2PageVisibleColumns', JSON.stringify(parsed))
         }
         return parsed
       } catch (e) {
@@ -2666,7 +2675,10 @@ const Client2Page = () => {
       console.log(`[Client2] fetchColumnValues complete for ${columnKey}: ${uniqueValues.length} values, page 1${hasPagesInfo ? ` of ${pagesNum}` : ''}`)
 
       setColumnValues(prev => ({ ...prev, [columnKey]: uniqueValues }))
-      setSelectedColumnValues(prev => ({ ...prev, [columnKey]: [] }))
+      // Preserve previously applied selections; initialize from existing checkbox filter if present
+      const existingFilter = columnFilters[`${columnKey}_checkbox`]
+      const initialSelection = existingFilter?.values || (selectedColumnValues[columnKey] || [])
+      setSelectedColumnValues(prev => ({ ...prev, [columnKey]: initialSelection }))
       setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
       setColumnValuesTotalPages(prev => ({ ...prev, [columnKey]: totalPages }))
       setColumnValuesHasMore(prev => ({ ...prev, [columnKey]: hasPagesInfo ? pagesNum > 1 : inferredHasMore }))
@@ -4743,6 +4755,24 @@ const Client2Page = () => {
                       onChange={(e) => setColumnSearchQuery(e.target.value)}
                       className="w-full px-3 py-2 text-sm text-[#1F2937] border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-[#9CA3AF]"
                     />
+                    {(() => {
+                      const allSelected = Object.values(visibleColumns || {}).length > 0 && Object.values(visibleColumns || {}).every(v => !!v)
+                      return (
+                        <button
+                          onClick={() => {
+                            setVisibleColumns(prev => {
+                              const next = { ...prev }
+                              // Toggle all columns listed in allColumns
+                              allColumns.forEach(c => { next[c.key] = !allSelected })
+                              return next
+                            })
+                          }}
+                          className="mt-2 text-sm font-semibold text-pink-600 hover:text-pink-700"
+                        >
+                          {allSelected ? 'Hide All' : 'Show All'}
+                        </button>
+                      )
+                    })()}
                   </div>
 
                   <div className="overflow-y-auto flex-1 px-2 py-2" onWheel={(e) => e.stopPropagation()}>
@@ -4967,11 +4997,11 @@ const Client2Page = () => {
                                     </svg>
                                   </div>
                                   <div
-                                    className={`flex items-center gap-1 flex-1 ${isSorting ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                                    className={`flex items-center gap-1 flex-1 min-w-0 pr-3 ${isSorting ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
                                     onClick={() => handleSort(col.key)}
                                   >
                                     <span
-                                      className="truncate"
+                                      className="block truncate whitespace-nowrap max-w-full"
                                       title={col.label}
                                     >
                                       {col.label}{percentModeActive && ['balance', 'credit', 'equity', 'margin', 'marginFree', 'marginInitial', 'marginMaintenance', 'profit', 'floating', 'pnl', 'previousEquity', 'assets', 'liabilities', 'storage', 'blockedCommission', 'blockedProfit', 'dailyDeposit', 'dailyWithdrawal', 'dailyCreditIn', 'dailyCreditOut', 'dailyBonusIn', 'dailyBonusOut', 'dailySOCompensationIn', 'dailySOCompensationOut', 'thisWeekPnL', 'thisWeekDeposit', 'thisWeekWithdrawal', 'thisWeekCreditIn', 'thisWeekCreditOut', 'thisWeekBonusIn', 'thisWeekBonusOut', 'thisWeekSOCompensationIn', 'thisWeekSOCompensationOut', 'thisWeekCommission', 'thisWeekCorrection', 'thisWeekSwap', 'thisMonthPnL', 'thisMonthDeposit', 'thisMonthWithdrawal', 'thisMonthCreditIn', 'thisMonthCreditOut', 'thisMonthBonusIn', 'thisMonthBonusOut', 'thisMonthSOCompensationIn', 'thisMonthSOCompensationOut', 'thisMonthCommission', 'thisMonthCorrection', 'thisMonthSwap', 'lifetimePnL', 'lifetimeDeposit', 'lifetimeWithdrawal', 'lifetimeCreditIn', 'lifetimeCreditOut', 'lifetimeBonusIn', 'lifetimeBonusOut', 'lifetimeSOCompensationIn', 'lifetimeSOCompensationOut', 'lifetimeCommission', 'lifetimeCorrection', 'lifetimeSwap'].includes(col.key) ? ' %' : ''}
@@ -4985,7 +5015,7 @@ const Client2Page = () => {
                                 </div>
                                 {/* Header sorting loader - show only for active sorted column while isSorting */}
                                 {isSorting && sortBy === col.key && (
-                                  <div className="relative w-8 h-4 flex items-center justify-center" aria-label="Sorting">
+                                  <div className="relative w-8 h-4 flex items-center justify-center flex-shrink-0" aria-label="Sorting">
                                     <div className="header-loading-track">
                                       <div className="header-loading-bar" />
                                     </div>
@@ -4993,7 +5023,7 @@ const Client2Page = () => {
                                 )}
 
                                 {/* Filter Icon - Just icon, no box */}
-                                <div className="relative" ref={el => {
+                                <div className="relative flex-shrink-0 ml-1" ref={el => {
                                   if (!filterRefs.current) filterRefs.current = {}
                                   filterRefs.current[col.key] = el
                                 }}>
@@ -5039,10 +5069,10 @@ const Client2Page = () => {
                                         // This ensures checkboxes show the correct state immediately when dropdown opens
                                       }
                                     }}
-                                    className={`p-0.5 transition-opacity hover:opacity-70 ${filterCount > 0 ? 'text-green-400' : 'text-white/60'}`}
+                                    className={`p-0.5 transition-opacity hover:opacity-80 ${filterCount > 0 ? 'text-green-400' : 'text-white/80'}`}
                                     title="Filter column"
                                   >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                                     </svg>
                                     {filterCount > 0 && (

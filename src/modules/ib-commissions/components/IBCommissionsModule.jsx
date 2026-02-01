@@ -291,6 +291,9 @@ export default function IBCommissionsModule() {
   const activeColumns = allColumns.filter(col => visibleColumns[col.key])
   const gridTemplateColumns = activeColumns.map(col => col.width).join(' ')
 
+  // Determine if all columns are currently selected
+  const allSelected = allColumns.every(c => visibleColumns[c.key])
+
   const renderCellValue = (item, key, isSticky = false, stickyLeft = '0px', zIndex = 10) => {
     let value = '-'
     
@@ -1203,6 +1206,24 @@ export default function IBCommissionsModule() {
                   <circle cx="11" cy="11" r="8" strokeWidth="2"/>
                   <path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
+              </div>
+              <div className="mt-2">
+                <button
+                  onClick={() => {
+                    setVisibleColumns(prev => {
+                      const next = {}
+                      if (!allSelected) {
+                        allColumns.forEach(c => { next[c.key] = true })
+                      } else {
+                        allColumns.forEach(c => { next[c.key] = false })
+                      }
+                      return { ...prev, ...next }
+                    })
+                  }}
+                  className="text-sm font-semibold text-pink-600 hover:text-pink-700"
+                >
+                  {allSelected ? 'Hide All' : 'Show All'}
+                </button>
               </div>
             </div>
             

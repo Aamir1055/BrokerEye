@@ -62,6 +62,8 @@ const MarginLevelPage = () => {
   // Column visibility states
   const [showColumnSelector, setShowColumnSelector] = useState(false)
   const columnSelectorRef = useRef(null)
+  const [columnSelectorPos, setColumnSelectorPos] = useState({ top: 0, left: 0 })
+  const [columnSearch, setColumnSearch] = useState('')
   const [visibleColumns, setVisibleColumns] = useState({
     login: true,
     name: true,
@@ -92,12 +94,43 @@ const MarginLevelPage = () => {
     { key: 'currency', label: 'Currency' }
   ]
 
+  // Determine if all columns are currently selected
+  const allSelected = allColumns.every(c => visibleColumns[c.key])
+
   const toggleColumn = (columnKey) => {
     setVisibleColumns(prev => ({
       ...prev,
       [columnKey]: !prev[columnKey]
     }))
   }
+
+  // Keep the Show/Hide Columns panel open and anchored while scrolling
+  useEffect(() => {
+    if (!showColumnSelector) return
+    const handleScroll = () => {
+      const host = columnSelectorRef.current
+      if (!host) return
+      const btn = host.querySelector('button') || host
+      const rect = btn.getBoundingClientRect()
+      const scrollY = window.scrollY || document.documentElement.scrollTop || 0
+      const scrollX = window.scrollX || document.documentElement.scrollLeft || 0
+      const panelWidth = 300
+      const gap = 8
+      const viewportH = window.innerHeight || document.documentElement.clientHeight || 800
+      const lift = Math.min(400, Math.round(viewportH * 0.5))
+      let top = rect.top + scrollY - lift + Math.round(rect.height / 2)
+      top = Math.max(scrollY + 10, Math.min(top, scrollY + viewportH - 10))
+      let left = rect.right + scrollX + gap
+      const viewportWidth = window.innerWidth || document.documentElement.clientWidth
+      if (left + panelWidth > scrollX + viewportWidth) {
+        left = rect.left + scrollX - panelWidth - gap
+      }
+      setColumnSelectorPos({ top, left })
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [showColumnSelector])
 
   // Column filter states
   const [columnFilters, setColumnFilters] = useState({})
@@ -1088,9 +1121,30 @@ const MarginLevelPage = () => {
                     </button>
 
                     {/* Columns Button (icon only) */}
-                    <div className="relative">
+                    <div className="relative" ref={columnSelectorRef}>
                       <button
-                        onClick={() => setShowColumnSelector(!showColumnSelector)}
+                        onClick={() => {
+                          const host = columnSelectorRef.current
+                          if (host) {
+                            const btn = host.querySelector('button') || host
+                            const rect = btn.getBoundingClientRect()
+                            const scrollY = window.scrollY || document.documentElement.scrollTop || 0
+                            const scrollX = window.scrollX || document.documentElement.scrollLeft || 0
+                            const panelWidth = 300
+                            const gap = 8
+                            const viewportH = window.innerHeight || document.documentElement.clientHeight || 800
+                            const lift = Math.min(400, Math.round(viewportH * 0.5))
+                            let top = rect.top + scrollY - lift + Math.round(rect.height / 2)
+                            top = Math.max(scrollY + 10, Math.min(top, scrollY + viewportH - 10))
+                            let left = rect.right + scrollX + gap
+                            const viewportWidth = window.innerWidth || document.documentElement.clientWidth
+                            if (left + panelWidth > scrollX + viewportWidth) {
+                              left = rect.left + scrollX - panelWidth - gap
+                            }
+                            setColumnSelectorPos({ top, left })
+                          }
+                          setShowColumnSelector(v => !v)
+                        }}
                         className="h-10 w-10 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
                         title="Show/Hide Columns"
                       >
@@ -1101,27 +1155,60 @@ const MarginLevelPage = () => {
                       </button>
                       {showColumnSelector && (
                         <div
-                          ref={columnSelectorRef}
-                          className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-2 z-50 w-56"
-                          style={{ maxHeight: '400px', overflowY: 'auto' }}
+                          className="fixed bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-3 flex flex-col"
+                          style={{ top: columnSelectorPos.top, left: columnSelectorPos.left, width: 300, maxHeight: '70vh', zIndex: 20000000 }}
+                          onClick={(e) => e.stopPropagation()}
+                          onWheel={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
                         >
-                          <div className="px-3 py-2 border-b border-[#F3F4F6]">
-                            <p className="text-xs font-semibold text-[#1F2937] uppercase">Show/Hide Columns</p>
+                          <div className="px-4 py-2 border-b border-[#F3F4F6] flex items-center justify-between">
+                            <p className="text-sm font-semibold text-[#1F2937]">Show/Hide Columns</p>
+                            <button onClick={() => setShowColumnSelector(false)} className="text-[#9CA3AF] hover:text-[#4B5563] p-1 rounded hover:bg-gray-50">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
                           </div>
-                          {allColumns.map(col => (
-                            <label
-                              key={col.key}
-                              className="flex items-center px-3 py-1.5 hover:bg-blue-50 cursor-pointer transition-colors"
+                          <div className="px-4 py-2 border-b border-[#F3F4F6]">
+                            <input
+                              type="text"
+                              placeholder="Search columns..."
+                              value={columnSearch}
+                              onChange={(e) => setColumnSearch(e.target.value)}
+                              className="w-full px-3 py-2 text-sm text-[#1F2937] border border-[#E5E7EB] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-[#9CA3AF]"
+                            />
+                            <button
+                              onClick={() => {
+                                setVisibleColumns(prev => {
+                                  const next = {}
+                                  if (!allSelected) {
+                                    allColumns.forEach(c => { next[c.key] = true })
+                                  } else {
+                                    allColumns.forEach(c => { next[c.key] = false })
+                                  }
+                                  return { ...prev, ...next }
+                                })
+                              }}
+                              className="mt-2 text-sm font-semibold text-pink-600 hover:text-pink-700"
                             >
-                              <input
-                                type="checkbox"
-                                checked={visibleColumns[col.key]}
-                                onChange={() => toggleColumn(col.key)}
-                                className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
-                              />
-                              <span className="ml-2 text-sm text-[#374151]">{col.label}</span>
-                            </label>
-                          ))}
+                              {allSelected ? 'Hide All' : 'Show All'}
+                            </button>
+                          </div>
+                          <div className="overflow-y-auto flex-1 px-2 py-2" onWheel={(e) => e.stopPropagation()}>
+                            {allColumns
+                              .filter(c => !columnSearch || c.label.toLowerCase().includes(columnSearch.toLowerCase()))
+                              .map(col => (
+                              <label key={col.key} className="flex items-center gap-2 text-xs text-gray-700 hover:bg-gray-50 p-2 rounded-md cursor-pointer transition-colors">
+                                <input
+                                  type="checkbox"
+                                  checked={visibleColumns[col.key]}
+                                  onChange={() => toggleColumn(col.key)}
+                                  className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
+                                />
+                                <span className="font-semibold">{col.label}</span>
+                              </label>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
