@@ -495,26 +495,26 @@ const DashboardPage = () => {
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 overflow-x-hidden transition-all duration-300 ${sidebarOpen ? 'ml-60' : 'ml-16'}`}>
         <div className="w-full mx-auto">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-white shadow-sm"
-              >
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Dashboard
-                </h1>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  Welcome back, {user?.full_name || user?.username}
-                </p>
+          <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
+            <div className="mb-1.5 pb-1.5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-white shadow-sm"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+                <div>
+                  <h1 className="text-xl font-bold text-[#1A1A1A]">
+                    Dashboard
+                  </h1>
+                  <p className="text-xs text-[#6B7280] mt-0.5">Welcome back, {user?.full_name || user?.username}</p>
+                </div>
               </div>
+              <WebSocketIndicator />
             </div>
-            <WebSocketIndicator />
           </div>
 
           {/* Face Cards Header with Reset Button and Card Filter */}
