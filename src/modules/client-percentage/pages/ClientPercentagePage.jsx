@@ -527,6 +527,11 @@ const ClientPercentagePage = () => {
     setEditComment('')
   }
 
+  // Manual refresh handler
+  const handleRefresh = async () => {
+    await fetchAllClientPercentages(currentPage)
+  }
+
   // Handle search - triggered by search icon click or Enter key
   const handleSearch = () => {
     setSearchQuery(searchInput)
@@ -813,6 +818,18 @@ const ClientPercentagePage = () => {
                       setShowGroupModal(true)
                     }}
                   />
+
+                  {/* Refresh Button */}
+                  <button
+                    onClick={handleRefresh}
+                    className="h-8 w-8 rounded-md bg-white border border-[#E5E7EB] text-[#374151] shadow-sm inline-flex items-center justify-center hover:bg-gray-50 hover:text-[#1F2937] transition-colors"
+                    title="Refresh"
+                    aria-label="Refresh"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
@@ -1018,7 +1035,7 @@ const ClientPercentagePage = () => {
                               }}
                               className="mt-2 text-sm font-semibold text-pink-600 hover:text-pink-700"
                             >
-                              {allSelected ? 'Hide All' : 'Show All'}
+                              {allSelected ? 'Deselect All' : 'Select All'}
                             </button>
                           </div>
                           <div className="overflow-y-auto flex-1 px-2 py-2" onWheel={(e) => e.stopPropagation()}>

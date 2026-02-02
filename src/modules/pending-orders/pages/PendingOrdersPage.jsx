@@ -1564,7 +1564,7 @@ const PendingOrdersPage = () => {
                             }}
                             className="mt-2 text-sm font-semibold text-pink-600 hover:text-pink-700"
                           >
-                            {allSelected ? 'Hide All' : 'Show All'}
+                            {allSelected ? 'Deselect All' : 'Select All'}
                           </button>
                         </div>
                         <div className="overflow-y-auto flex-1 px-2 py-2" onWheel={(e) => e.stopPropagation()}>

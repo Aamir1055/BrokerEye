@@ -4769,7 +4769,7 @@ const Client2Page = () => {
                           }}
                           className="mt-2 text-sm font-semibold text-pink-600 hover:text-pink-700"
                         >
-                          {allSelected ? 'Hide All' : 'Show All'}
+                          {allSelected ? ' Deselect All' : 'Select All'}
                         </button>
                       )
                     })()}
