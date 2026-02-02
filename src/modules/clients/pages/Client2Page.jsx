@@ -5524,24 +5524,26 @@ const Client2Page = () => {
                                                 )}
                                               </div>
 
-                                              {/* Footer actions: persist even when condition layouts are open */}
-                                              <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
-                                                <button
-                                                  onClick={() => setShowFilterDropdown(null)}
-                                                  className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
-                                                >
-                                                  Close
-                                                </button>
-                                                <button
-                                                  onClick={() => {
-                                                    applyCheckboxFilter(columnKey)
-                                                    setShowFilterDropdown(null)
-                                                  }}
-                                                  className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
-                                                >
-                                                  OK
-                                                </button>
-                                              </div>
+                                              {/* Footer actions: hide when inline number submenu is open to avoid duplicates */}
+                                              {openNumberFilterColumn !== columnKey && ((columnValues[columnKey] || []).length > 0) && (
+                                                <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
+                                                  <button
+                                                    onClick={() => setShowFilterDropdown(null)}
+                                                    className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
+                                                  >
+                                                    Close
+                                                  </button>
+                                                  <button
+                                                    onClick={() => {
+                                                      applyCheckboxFilter(columnKey)
+                                                      setShowFilterDropdown(null)
+                                                    }}
+                                                    className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                  >
+                                                    OK
+                                                  </button>
+                                                </div>
+                                              )}
                                             </>
                                           )
                                         })()}
@@ -5970,26 +5972,28 @@ const Client2Page = () => {
                                                 </>
                                               </div>
 
-                                              {/* Footer actions - always visible even when condition panel open */}
-                                              <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
-                                                  <button
-                                                    onClick={() => setShowFilterDropdown(null)}
-                                                    className={allValues.length > 0 ? "flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300" : "w-full px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"}
-                                                  >
-                                                    Close
-                                                  </button>
-                                                  {allValues.length > 0 && (
+                                              {/* Footer actions: hide when inline text submenu is open to avoid duplicates */}
+                                              {openTextFilterColumn !== columnKey && (
+                                                <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
                                                     <button
-                                                      onClick={() => {
-                                                        applyCheckboxFilter(columnKey)
-                                                        setShowFilterDropdown(null)
-                                                      }}
-                                                      className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                      onClick={() => setShowFilterDropdown(null)}
+                                                      className={allValues.length > 0 ? "flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300" : "w-full px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"}
                                                     >
-                                                      OK
+                                                      Close
                                                     </button>
-                                                  )}
-                                                </div>
+                                                    {allValues.length > 0 && (
+                                                      <button
+                                                        onClick={() => {
+                                                          applyCheckboxFilter(columnKey)
+                                                          setShowFilterDropdown(null)
+                                                        }}
+                                                        className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                      >
+                                                        OK
+                                                      </button>
+                                                    )}
+                                                  </div>
+                                              )}
                                             </>
                                           )
                                         })()}
