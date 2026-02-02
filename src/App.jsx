@@ -68,7 +68,8 @@ const AppContent = () => {
         <Route path="/margin-level" element={<MarginLevelPage />} />
         <Route path="/live-dealing" element={<LiveDealingPage />} />
         <Route path="/client-percentage" element={<ClientPercentagePage />} />
-        {/** IB Commissions route removed for broker branch */}
+        {/* IB Commissions */}
+        <Route path="/ib-commissions" element={<IBCommissionsPage />} />
         <Route path="/broker-rules" element={<BrokerRulePage />} />
   <Route path="/analytics" element={<GraphicalAnalyticsPage />} />
           <Route path="/client-dashboard-c" element={<ClientDashboardDesignC />} />
