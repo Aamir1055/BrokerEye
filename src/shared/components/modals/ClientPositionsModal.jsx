@@ -2634,8 +2634,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       className="bg-red-600 hover:bg-red-700 text-white px-2 py-1.5 rounded-full shadow-lg transition-all duration-200 flex items-center gap-1.5 hover:scale-105 text-[10px] font-bold"
                       title="Jump to Pending Orders Section"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                       <span className="whitespace-nowrap">Pending Orders</span>
                     </button>
@@ -3506,6 +3506,16 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                     <div className="pr-6" ref={amountInputRef}>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
                       <div className="relative">
+                        {/* Editable input field */}
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg text-sm bg-white text-gray-900"
+                          placeholder="Enter amount"
+                          value={amount}
+                          onChange={(e) => { setAmount(e.target.value); setOperationError(''); setOperationSuccess(''); }}
+                        />
+                        {/* Dropdown toggle inside input area */}
                         <button
                           type="button"
                           ref={amountButtonRef}
@@ -3522,10 +3532,10 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                               setAmountDropdownMaxH(maxH)
                             } catch {}
                           }}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg text-left text-sm bg-white text-gray-900 flex items-center justify-between"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-gray-600 hover:bg-gray-100"
+                          aria-label="Amount presets"
                         >
-                          <span>{amount ? formatIndian(amount) : 'Select Amount'}</span>
-                          <svg className={`w-4 h-4 text-gray-500 transition-transform ${amountPresetOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                          <svg className={`w-4 h-4 transition-transform ${amountPresetOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.08z" clipRule="evenodd" />
                           </svg>
                         </button>
