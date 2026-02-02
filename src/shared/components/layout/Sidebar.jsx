@@ -89,7 +89,7 @@ const Sidebar = ({ isOpen, onClose, onToggle, marginLevelCount = 0 }) => {
       {/* Sidebar */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-50 lg:z-auto
+          fixed inset-y-0 left-0 z-50
           w-64 bg-white
           border-r border-slate-200 shadow-lg
           transform transition-transform duration-300 ease-in-out

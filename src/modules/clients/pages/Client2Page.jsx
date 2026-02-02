@@ -4775,7 +4775,7 @@ const Client2Page = () => {
                     })()}
                   </div>
 
-                  <div className="overflow-y-auto flex-1 px-2 py-2" onWheel={(e) => e.stopPropagation()}>
+                  <div className="overflow-y-auto flex-1 px-2 py-2 max-h-80" onWheel={(e) => e.stopPropagation()}>
                     {allColumns
                       .filter(col => col.label.toLowerCase().includes((columnSearchQuery || '').toLowerCase()))
                       .map(col => (
@@ -5427,7 +5427,7 @@ const Client2Page = () => {
 
                                                     {/* Values List - Lazy loading with scroll detection */}
                                                     <div
-                                                      className="flex-1 overflow-y-auto px-3 py-2"
+                                                      className="flex-1 overflow-y-auto px-3 py-2 max-h-80"
                                                   onWheel={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onTouchMove={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onMouseDown={() => { columnScrollUserActionRef.current[columnKey] = true }}
@@ -5888,7 +5888,7 @@ const Client2Page = () => {
 
                                                   {/* Values List - Lazy loading with scroll detection */}
                                                   <div
-                                                    className="flex-1 overflow-y-auto px-3 py-2"
+                                                    className="flex-1 overflow-y-auto px-3 py-2 max-h-80"
                                                   onWheel={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onTouchMove={() => { columnScrollUserActionRef.current[columnKey] = true }}
                                                   onMouseDown={() => { columnScrollUserActionRef.current[columnKey] = true }}

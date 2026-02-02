@@ -38,6 +38,22 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     { value: 'credit_out', label: 'Credit Out' }
   ]
   const [amount, setAmount] = useState('')
+  // Amount preset dropdown
+  const [amountPresetOpen, setAmountPresetOpen] = useState(false)
+  const amountInputRef = useRef(null)
+  const amountPresetRef = useRef(null)
+  const amountButtonRef = useRef(null)
+  const [amountDropdownUp, setAmountDropdownUp] = useState(false)
+  const [amountDropdownMaxH, setAmountDropdownMaxH] = useState(320)
+  const formatIndian = (n) => {
+    try { return new Intl.NumberFormat('en-IN').format(Number(n)) } catch { return String(n) }
+  }
+  const AMOUNT_PRESETS = [
+    1000, 5000, 10000, 25000, 50000,
+    100000, 200000, 500000,
+    1000000, 2000000, 5000000,
+    10000000, 20000000, 50000000
+  ]
   const [comment, setComment] = useState('')
   const [operationLoading, setOperationLoading] = useState(false)
   const [operationSuccess, setOperationSuccess] = useState('')
@@ -128,6 +144,21 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     profit: 120,
     comment: 180
   }
+
+  // Close amount presets when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!amountPresetOpen) return
+      if (
+        amountPresetRef.current && !amountPresetRef.current.contains(e.target) &&
+        amountInputRef.current && !amountInputRef.current.contains(e.target)
+      ) {
+        setAmountPresetOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [amountPresetOpen])
 
   useEffect(() => {
     if (!dealsColumnWidths || Object.keys(dealsColumnWidths).length === 0) {
@@ -1335,22 +1366,14 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
     return { regularPositions, pendingOrders }
   }, [filteredPositions, positionsSortColumn, positionsSortDirection])
 
-  // Pagination logic for positions
-  const positionsTotalPages = Math.ceil(filteredPositions.length / positionsItemsPerPage)
-  const positionsStartIndex = (positionsCurrentPage - 1) * positionsItemsPerPage
-  const positionsEndIndex = positionsStartIndex + positionsItemsPerPage
-  const displayedPositions = filteredPositions.slice(positionsStartIndex, positionsEndIndex)
+  // Pagination removed for Positions tab: always show all filtered rows
+  const positionsTotalPages = 1
+  const positionsStartIndex = 0
+  const positionsEndIndex = filteredPositions.length
+  const displayedPositions = filteredPositions
   
-  // Apply pagination to grouped data
-  const paginatedGroupedData = useMemo(() => {
-    const allItems = [...groupedDisplayData.regularPositions, ...groupedDisplayData.pendingOrders]
-    const paginatedItems = allItems.slice(positionsStartIndex, positionsEndIndex)
-    
-    return {
-      regularPositions: paginatedItems.filter(item => item.position),
-      pendingOrders: paginatedItems.filter(item => item.order)
-    }
-  }, [groupedDisplayData, positionsStartIndex, positionsEndIndex])
+  // Pagination removed: use full grouped data for rendering
+  const paginatedGroupedData = useMemo(() => groupedDisplayData, [groupedDisplayData])
 
   // Reset to page 1 when positions filters change
   useEffect(() => {
@@ -1694,7 +1717,10 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start md:items-center justify-center p-0 md:p-4">
-      <div className="bg-white rounded-none md:rounded-2xl shadow-2xl max-w-7xl w-full h-screen md:h-auto md:max-h-[95vh] flex flex-col overflow-y-auto border-0 md:border md:border-slate-200">
+      <div
+        className="bg-white rounded-none md:rounded-2xl shadow-2xl max-w-7xl w-full h-screen md:h-auto md:max-h-[95vh] flex flex-col border-0 md:border md:border-slate-200"
+        style={{ overflowY: (amountPresetOpen || opSelectOpen) ? 'hidden' : 'auto' }}
+      >
         {/* Modal Header - Fixed */}
         <div className="flex-shrink-0 flex items-center justify-between p-0.5 md:p-4 border-b border-slate-200 bg-blue-600">
           <div>
@@ -1777,22 +1803,9 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             </button>
           </div>
 
-          {/* Controls for Positions Tab */}
+          {/* Controls for Positions Tab (no pagination) */}
           {activeTab === 'positions' && (
-            <div className="flex items-center justify-between gap-1.5 py-2">
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-600">Show:</span>
-                <select
-                  value={positionsItemsPerPage}
-                  onChange={(e) => setPositionsItemsPerPage(parseInt(e.target.value))}
-                  className="px-1.5 py-0.5 text-xs border border-gray-300 rounded bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-                >
-                  {getPositionsPageSizeOptions(filteredPositions.length).map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-              </div>
-
+            <div className="flex items-center justify-end gap-1.5 py-2">
               <div className="flex items-center gap-1.5">
                 {/* Columns Button */}
                 <div className="relative">
@@ -1882,61 +1895,13 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   )}
                 </div>
 
-                {filteredPositions.length > 0 && positionsItemsPerPage !== 'All' && (
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setPositionsCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={positionsCurrentPage === 1}
-                    className={`p-0.5 rounded transition-colors ${
-                      positionsCurrentPage === 1
-                        ? 'text-gray-300 cursor-not-allowed'
-                        : 'text-gray-600 hover:bg-blue-100 cursor-pointer'
-                    }`}
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  
-                  <span className="text-xs text-gray-700 font-medium px-1">
-                    {positionsCurrentPage}/{positionsTotalPages}
-                  </span>
-                  
-                  <button
-                    onClick={() => setPositionsCurrentPage(prev => Math.min(positionsTotalPages, prev + 1))}
-                    disabled={positionsCurrentPage === positionsTotalPages}
-                    className={`p-0.5 rounded transition-colors ${
-                      positionsCurrentPage === positionsTotalPages
-                        ? 'text-gray-300 cursor-not-allowed'
-                        : 'text-gray-600 hover:bg-blue-100 cursor-pointer'
-                    }`}
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-              )}
               </div>
             </div>
           )}
 
-          {/* Controls for NET Tab */}
+          {/* Controls for NET Tab (no pagination) */}
           {activeTab === 'netpositions' && (
-            <div className="flex items-center justify-between gap-1.5 py-2">
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-600">Show:</span>
-                <select
-                  value={netItemsPerPage}
-                  onChange={(e) => setNetItemsPerPage(parseInt(e.target.value))}
-                  className="px-1.5 py-0.5 text-xs border border-gray-300 rounded bg-white text-gray-700 hover:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-                >
-                  {getPositionsPageSizeOptions(filteredNetPositions.length).map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-              </div>
-
+            <div className="flex items-center justify-end gap-1.5 py-2">
               <div className="flex items-center gap-1.5">
                 {/* Columns Button */}
                 <div className="relative">
@@ -2003,41 +1968,6 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   )}
                 </div>
 
-                {filteredNetPositions.length > 0 && netItemsPerPage !== 'All' && (
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setNetCurrentPage(prev => Math.max(1, prev - 1))}
-                      disabled={netCurrentPage === 1}
-                      className={`p-0.5 rounded transition-colors ${
-                        netCurrentPage === 1
-                          ? 'text-gray-300 cursor-not-allowed'
-                          : 'text-gray-600 hover:bg-blue-100 cursor-pointer'
-                      }`}
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    
-                    <span className="text-xs text-gray-700 font-medium px-1">
-                      {netCurrentPage}/{netTotalPages}
-                    </span>
-                    
-                    <button
-                      onClick={() => setNetCurrentPage(prev => Math.min(netTotalPages, prev + 1))}
-                      disabled={netCurrentPage === netTotalPages}
-                      className={`p-0.5 rounded transition-colors ${
-                        netCurrentPage === netTotalPages
-                          ? 'text-gray-300 cursor-not-allowed'
-                          : 'text-gray-600 hover:bg-blue-100 cursor-pointer'
-                      }`}
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           )}
@@ -2122,7 +2052,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       )}
                     </div>
                     <div className="text-sm text-gray-600">
-                      {displayedPositions.length} of {filteredPositions.length} positions
+                      {filteredPositions.length} positions
                     </div>
                   </div>
                   
@@ -2791,7 +2721,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                     )}
                   </div>
                   <div className="text-sm text-gray-600">
-                    {Math.max(0, Math.min(netItemsPerPage, filteredNetPositions.length - netStartIndex))} of {filteredNetPositions.length} net positions
+                    {filteredNetPositions.length} net positions
                   </div>
                 </div>
 
@@ -2846,7 +2776,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                         }
                         if(typeof av==='string') return netSortDirection==='asc'? av.localeCompare(bv): bv.localeCompare(av);
                         return netSortDirection==='asc'? av-bv: bv-av;
-                      })).slice(netStartIndex, netEndIndex).map((netPos, index) => (
+                      })).map((netPos, index) => (
                         <tr key={`${netPos.symbol}-${index}`} className="hover:bg-blue-50 transition-colors">
                           {netVisibleColumns.symbol && (
                           <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
@@ -2980,6 +2910,57 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                     )}
                   </div>
 
+                  {/* Inline Search (moves into the same row as date/preset) */}
+                  <div className="flex-1 min-w-[280px]">
+                    <div className="relative" ref={dealsSearchRef}>
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <input
+                        type="text"
+                        value={dealsSearchQuery}
+                        onChange={(e) => setDealsSearchQuery(e.target.value)}
+                        onFocus={() => setShowDealsSearchSuggestions(true)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') {
+                            setShowDealsSearchSuggestions(false);
+                          }
+                        }}
+                        placeholder="Search deals by time, symbol, or action..."
+                        className="w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-700 placeholder:text-gray-400"
+                      />
+                      {dealsSearchQuery && (
+                        <button
+                          onClick={() => setDealsSearchQuery('')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+
+                      {/* Search Suggestions Dropdown */}
+                      {showDealsSearchSuggestions && dealsSearchQuery && getDealsSearchSuggestions().length > 0 && (
+                        <div className="absolute z-[60] mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                          {getDealsSearchSuggestions().map((suggestion, index) => (
+                            <button
+                              key={index}
+                              onClick={() => {
+                                setDealsSearchQuery(suggestion.value);
+                                setShowDealsSearchSuggestions(false);
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm hover:bg-blue-50 flex items-center gap-2 border-b border-gray-100 last:border-b-0"
+                            >
+                              <span className="text-gray-700">{suggestion.value}</span>
+                              <span className="ml-auto text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">{suggestion.type}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Pagination Controls */}
                   {filteredDealsResult.length > 0 && (
                     <div className="flex items-center gap-1.5">
@@ -3029,6 +3010,9 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                             </svg>
                           </button>
                         </div>
+                        <span className="ml-2 text-xs text-gray-600 whitespace-nowrap">
+                          {displayedDeals.length} of {totalDealsCount} deals
+                        </span>
                     </div>
                   )}
                 </div>
@@ -3118,61 +3102,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                 </div>
               ) : (
                 <>
-                  {/* Search Bar */}
-                  <div className="mb-4 flex items-center gap-3">
-                    <div className="relative flex-1" ref={dealsSearchRef}>
-                      <div className="relative">
-                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        <input
-                          type="text"
-                          value={dealsSearchQuery}
-                          onChange={(e) => setDealsSearchQuery(e.target.value)}
-                          onFocus={() => setShowDealsSearchSuggestions(true)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Escape') {
-                              setShowDealsSearchSuggestions(false);
-                            }
-                          }}
-                          placeholder="Search deals by time, symbol, or action..."
-                          className="w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-700 placeholder:text-gray-400"
-                        />
-                        {dealsSearchQuery && (
-                          <button
-                            onClick={() => setDealsSearchQuery('')}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Search Suggestions Dropdown */}
-                      {showDealsSearchSuggestions && dealsSearchQuery && getDealsSearchSuggestions().length > 0 && (
-                        <div className="absolute z-[60] mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                          {getDealsSearchSuggestions().map((suggestion, index) => (
-                            <button
-                              key={index}
-                              onClick={() => {
-                                setDealsSearchQuery(suggestion.value);
-                                setShowDealsSearchSuggestions(false);
-                              }}
-                              className="w-full px-3 py-2 text-left text-sm hover:bg-blue-50 flex items-center gap-2 border-b border-gray-100 last:border-b-0"
-                            >
-                              <span className="text-gray-700">{suggestion.value}</span>
-                              <span className="ml-auto text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">{suggestion.type}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-sm text-gray-600 whitespace-nowrap">
-                      {displayedDeals.length} of {totalDealsCount} deals
-                    </div>
-                  </div>
+                  {/* Search moved into header row; table now sits directly below */}
 
                   {displayedDeals.length === 0 ? (
                     <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
@@ -3573,18 +3503,59 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       )}
                     </div>
 
-                    <div className="pr-6">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Amount ($)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        placeholder="Enter Amount"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400"
-                        required
-                      />
+                    <div className="pr-6" ref={amountInputRef}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          ref={amountButtonRef}
+                          onClick={() => {
+                            setAmountPresetOpen((o) => !o)
+                            try {
+                              const rect = amountButtonRef.current?.getBoundingClientRect() || { top: 0, bottom: 0 }
+                              const viewportH = window.innerHeight || document.documentElement.clientHeight || 800
+                              const spaceBelow = Math.max(0, viewportH - rect.bottom)
+                              const spaceAbove = Math.max(0, rect.top)
+                              const preferUp = spaceBelow < 280 && spaceAbove > spaceBelow
+                              setAmountDropdownUp(preferUp)
+                              const maxH = Math.max(180, Math.min(320, (preferUp ? (spaceAbove - 24) : (spaceBelow - 24))))
+                              setAmountDropdownMaxH(maxH)
+                            } catch {}
+                          }}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg text-left text-sm bg-white text-gray-900 flex items-center justify-between"
+                        >
+                          <span>{amount ? formatIndian(amount) : 'Select Amount'}</span>
+                          <svg className={`w-4 h-4 text-gray-500 transition-transform ${amountPresetOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.08z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                        {amountPresetOpen && (
+                          <div
+                            ref={amountPresetRef}
+                            className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden overflow-y-auto"
+                            onWheel={(e) => { e.stopPropagation() }}
+                            style={{
+                              overscrollBehavior: 'contain',
+                              maxHeight: amountDropdownMaxH,
+                              ...(amountDropdownUp
+                                ? { bottom: '100%', marginBottom: '0.5rem' }
+                                : { top: '100%', marginTop: '0.5rem' })
+                            }}
+                          >
+                            {AMOUNT_PRESETS.map((val) => (
+                              <div
+                                key={val}
+                                role="option"
+                                onClick={() => { setAmount(String(val)); setAmountPresetOpen(false); setOperationError(''); setOperationSuccess(''); }}
+                                className={`px-4 py-2 text-sm cursor-pointer hover:bg-blue-100 hover:text-blue-700 ${amount && Number(amount) === val ? 'bg-blue-50 text-blue-700' : 'text-gray-800'}`}
+                              >
+                                {formatIndian(val)}
+                              </div>
+                            ))}
+                            <div className="h-1" />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
