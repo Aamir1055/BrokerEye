@@ -2,79 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useData } from '../../contexts/DataContext'
 import { brokerAPI } from '../../services/api'
 import { formatTime } from '../../utils/dateFormatter'
-
-// Max number of deals to request in one fetch. Increase if needed.
-const CLIENT_DEALS_FETCH_LIMIT = 1000
-
-const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCache, allOrdersCache = [], onCacheUpdate }) => {
-  const [activeTab, setActiveTab] = useState('positions')
-  const [positions, setPositions] = useState([])
-  const [orders, setOrders] = useState([])
-  const [deals, setDeals] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [dealsLoading, setDealsLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [netPositions, setNetPositions] = useState([])
-  
-  // Broker Rules states
-  const [availableRules, setAvailableRules] = useState([])
-  const [clientRules, setClientRules] = useState([])
-  const [rulesLoading, setRulesLoading] = useState(false)
-  const [selectedTimeParam, setSelectedTimeParam] = useState({})
-  
-  // Client data state (for updated balance/credit/equity)
-  const [clientData, setClientData] = useState(client)
-  // Pull live clients list so the modal reflects current Balance/Equity/Credit/PnL
-  const { clients: liveClients } = useData()
-  
-  // Funds management state
-  const [operationType, setOperationType] = useState('deposit')
-  const [opSelectOpen, setOpSelectOpen] = useState(false)
-  const opSelectRef = useRef(null)
-  const operationOptions = [
-    { value: 'deposit', label: 'Deposit Funds' },
-    { value: 'withdrawal', label: 'Withdraw Funds' },
-    { value: 'credit_in', label: 'Credit In' },
-    { value: 'credit_out', label: 'Credit Out' }
-  ]
-  const [amount, setAmount] = useState('')
-  // Amount preset dropdown
-  const [amountPresetOpen, setAmountPresetOpen] = useState(false)
-  const amountInputRef = useRef(null)
-  const amountPresetRef = useRef(null)
-  const amountButtonRef = useRef(null)
-  const [amountDropdownUp, setAmountDropdownUp] = useState(false)
-  const [amountDropdownMaxH, setAmountDropdownMaxH] = useState(320)
-  const formatIndian = (n) => {
-    try { return new Intl.NumberFormat('en-IN').format(Number(n)) } catch { return String(n) }
-  }
-  const AMOUNT_PRESETS = [
-    1000, 5000, 10000, 25000, 50000,
-    100000, 200000, 500000,
-    1000000, 2000000, 5000000,
-    10000000, 20000000, 50000000
-  ]
-  const [comment, setComment] = useState('')
-  const [operationLoading, setOperationLoading] = useState(false)
-  const [operationSuccess, setOperationSuccess] = useState('')
-  const [operationError, setOperationError] = useState('')
-  
-  // Date filter state
-  const [fromDate, setFromDate] = useState('')
-  const [toDate, setToDate] = useState('')
-  const [filteredDeals, setFilteredDeals] = useState([])
-  const [allDeals, setAllDeals] = useState([])
-  const [hasAppliedFilter, setHasAppliedFilter] = useState(false)
-  const [selectedPreset, setSelectedPreset] = useState('')
-  const [dealsServerLimitReached, setDealsServerLimitReached] = useState(false)
-  const [totalDealsCount, setTotalDealsCount] = useState(0)
-  const [currentDateFilter, setCurrentDateFilter] = useState({ from: 0, to: 0 })
-  
-  // Search and filter states for positions
-  const [searchQuery, setSearchQuery] = useState('')
-  const [columnFilters, setColumnFilters] = useState({})
-  const [showFilterDropdown, setShowFilterDropdown] = useState(null)
-  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false)
+          {/* Broker Rules tab removed in this branch */}
   const filterRefs = useRef({})
   const searchRef = useRef(null)
   
@@ -3463,8 +3391,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
 
         </div>
 
-        {/* Summary Cards - Fixed at Bottom */}
-  <div className="">
+          {/* Summary Cards - Fixed at Bottom */}
+          <div className="">
           {/* Show face cards even if there are no open positions (missing values default to 0) */}
           {activeTab === 'positions' && (
             <div className="space-y-1">
