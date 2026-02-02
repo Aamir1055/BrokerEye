@@ -191,25 +191,26 @@ const SettingsPage = () => {
         <main className={`flex-1 p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
           <div className="max-w-full w-full">
             {/* Consistent Navbar visible during loading (Clients-style on desktop, centered on mobile) */}
-            <div className="bg-white rounded-2xl shadow-sm mb-6">
-              {/* Mobile: Match Live Dealing top bar (left menu + centered title) */}
-              <div className="sm:hidden flex items-center px-4 py-4 border-b border-[#ECECEC] relative rounded-2xl">
-                <button 
-                  onClick={() => setSidebarOpen(true)}
-                  className="w-12 h-12 rounded-2xl bg-[#F8F8F8] flex items-center justify-center"
+            <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
+              {/* Mobile: Clients-like single row with left menu + centered title */}
+              <div className="flex items-center sm:hidden">
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="text-gray-700 hover:text-gray-900 p-2.5 rounded-lg hover:bg-gray-100 border border-gray-300 transition-all"
                   title="Menu"
                   aria-label="Toggle sidebar"
                 >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 6h16M4 12h16M4 18h16" stroke="#000000" strokeWidth="2" strokeLinecap="round"/>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 </button>
-                <h1 className="text-lg font-semibold text-[#000000] absolute left-1/2 transform -translate-x-1/2">Settings</h1>
+                <h1 className="flex-1 text-center text-xl font-bold text-[#1A1A1A]">Settings</h1>
+                <div className="w-10" />
               </div>
 
               {/* Desktop: Title block + actions (kept consistent with other modules) */}
               <div className="hidden sm:block">
-                <div className="mb-2.5 pb-2.5">
+                <div className="mb-1.5 pb-1.5">
                   <div className="text-left">
                     <h1 className="text-xl font-bold text-[#1A1A1A]">Settings</h1>
                     <p className="text-xs text-[#6B7280] mt-0.5">Manage your account</p>
@@ -259,25 +260,26 @@ const SettingsPage = () => {
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 overflow-x-hidden relative z-0 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} bg-[#F8FAFC]`}>
         <div className="max-w-full mx-auto h-full flex flex-col min-h-0">
           {/* Header Section - match module navbar style */}
-              <div className="bg-white rounded-2xl shadow-sm mb-6">
-                {/* Mobile: Match Live Dealing top bar (left menu + centered title) */}
-                <div className="sm:hidden flex items-center px-4 py-4 border-b border-[#ECECEC] relative rounded-2xl">
-                  <button 
-                    onClick={() => setSidebarOpen(true)}
-                    className="w-12 h-12 rounded-2xl bg-[#F8F8F8] flex items-center justify-center"
+              <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
+                {/* Mobile: Clients-like single row with left menu + centered title */}
+                <div className="flex items-center sm:hidden">
+                  <button
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                    className="text-gray-700 hover:text-gray-900 p-2.5 rounded-lg hover:bg-gray-100 border border-gray-300 transition-all"
                     title="Menu"
                     aria-label="Toggle sidebar"
                   >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path d="M4 6h16M4 12h16M4 18h16" stroke="#000000" strokeWidth="2" strokeLinecap="round"/>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
                   </button>
-                  <h1 className="text-lg font-semibold text-[#000000] absolute left-1/2 transform -translate-x-1/2">Settings</h1>
+                  <h1 className="flex-1 text-center text-xl font-bold text-[#1A1A1A]">Settings</h1>
+                  <div className="w-10" />
                 </div>
 
                 {/* Desktop: Title block + actions (kept consistent with other modules) */}
                 <div className="hidden sm:block">
-                  <div className="mb-2.5 pb-2.5">
+                  <div className="mb-1.5 pb-1.5">
                     <div className="text-left">
                       <h1 className="text-xl font-bold text-[#1A1A1A]">Settings</h1>
                       <p className="text-xs text-[#6B7280] mt-0.5">Manage your account</p>
