@@ -1394,7 +1394,7 @@ const Client2Page = () => {
         // Done via email-equality chunked mode; skip single-request path
         return
       }
-      const LARGE_IN_THRESHOLD = 20 // Lower threshold for better backend compatibility, especially with text fields
+      const LARGE_IN_THRESHOLD = 1000 // Pass all selected values in one request; chunk only beyond this
       const largeInFilters = inFilters.filter(f => f.value.length > LARGE_IN_THRESHOLD)
 
       if (largeInFilters.length > 0) {
@@ -3430,7 +3430,7 @@ const Client2Page = () => {
   const fetchAllPagesForPayload = useCallback(async (payload) => {
     // If payload contains a large IN filter, chunk it and merge all pages
     const inFilters = (payload.filters || []).filter(f => f && f.operator === 'in' && Array.isArray(f.value))
-    const LARGE_IN_THRESHOLD = 50
+    const LARGE_IN_THRESHOLD = 1000
     const largeIn = inFilters.find(f => f.value.length > LARGE_IN_THRESHOLD)
     if (largeIn) {
       const baseFilters = (payload.filters || []).filter(f => f !== largeIn)
