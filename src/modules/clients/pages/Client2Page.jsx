@@ -5524,26 +5524,24 @@ const Client2Page = () => {
                                                 )}
                                               </div>
 
-                                              {/* Footer actions (always show Close/OK for checkbox filters, including numeric like login) */}
-                                              {(openNumberFilterColumn !== columnKey && openTextFilterColumn !== columnKey) && (
-                                                <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
-                                                  <button
-                                                    onClick={() => setShowFilterDropdown(null)}
-                                                    className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
-                                                  >
-                                                    Close
-                                                  </button>
-                                                  <button
-                                                    onClick={() => {
-                                                      applyCheckboxFilter(columnKey)
-                                                      setShowFilterDropdown(null)
-                                                    }}
-                                                    className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
-                                                  >
-                                                    OK
-                                                  </button>
-                                                </div>
-                                              )}
+                                              {/* Footer actions: persist even when condition layouts are open */}
+                                              <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
+                                                <button
+                                                  onClick={() => setShowFilterDropdown(null)}
+                                                  className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
+                                                >
+                                                  Close
+                                                </button>
+                                                <button
+                                                  onClick={() => {
+                                                    applyCheckboxFilter(columnKey)
+                                                    setShowFilterDropdown(null)
+                                                  }}
+                                                  className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                >
+                                                  OK
+                                                </button>
+                                              </div>
                                             </>
                                           )
                                         })()}
