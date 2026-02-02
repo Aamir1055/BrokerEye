@@ -2371,8 +2371,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                   </table>
                 </div>
                   )}
-                </>
-)}
+                
+)
               {/* Floating Navigation Buttons - Smart visibility based on scroll position */}
               {!loading && groupedDisplayData?.regularPositions?.length > 0 && groupedDisplayData?.pendingOrders?.length > 0 && (
                 <div className="absolute top-1/2 -translate-y-1/2 right-2 flex flex-col gap-1.5 z-50">
