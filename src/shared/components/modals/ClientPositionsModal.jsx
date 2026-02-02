@@ -1781,7 +1781,7 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
             >
               Deals ({totalDealsCount || deals.length})
             </button>
-            {/* Balance and Broker Rules tabs removed in this branch */}
+            
           </div>
 
           {/* Controls for Positions Tab (no pagination) */}
@@ -1804,9 +1804,22 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
                       ref={positionsColumnSelectorRef}
                       className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48"
                       style={{ maxHeight: '300px', overflowY: 'auto' }}
-                    {/* Balance and Broker Rules content removed in this branch */}
-                      )}
+                    >
+                      <div className="px-2 py-1">
+                        {Object.keys(positionsVisibleColumns).map((key) => (
+                          <label key={key} className="flex items-center justify-between px-2 py-1 hover:bg-gray-50 cursor-pointer">
+                            <span className="text-xs text-gray-700 capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
+                            <input
+                              type="checkbox"
+                              className="h-3.5 w-3.5"
+                              checked={positionsVisibleColumns[key]}
+                              onChange={() => togglePositionsColumn(key)}
+                            />
+                          </label>
+                        ))}
+                      </div>
                     </div>
+                  )}
                     <div className="text-sm text-gray-600">
                       {filteredPositions.length} positions
                     </div>
