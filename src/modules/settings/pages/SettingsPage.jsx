@@ -183,21 +183,29 @@ const SettingsPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50">
-        {!isMobile && (
-          <Sidebar
-            isOpen={sidebarOpen}
-            onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen', JSON.stringify(false)) } catch {} }}
-            onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
-          />
-        )}
+        <Sidebar
+          isOpen={sidebarOpen}
+          onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen', JSON.stringify(false)) } catch {} }}
+          onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
+        />
         <main className={`flex-1 p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
           <div className="max-w-full w-full">
             {/* Consistent Navbar visible during loading */}
             <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
               <div className="mb-1.5 pb-1.5 flex items-center justify-between gap-3">
-                <div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                    className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-white shadow-sm"
+                    aria-label="Toggle sidebar"
+                    title="Menu"
+                  >
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                  </button>
                   <h1 className="text-xl font-bold text-[#1A1A1A]">Settings</h1>
-                  <p className="text-xs text-[#6B7280] mt-0.5">Manage your account security</p>
+                  <p className="text-xs text-[#6B7280] mt-0.5">Manage your account</p>
                 </div>
                 <div className="flex items-center gap-2"></div>
               </div>
@@ -231,13 +239,11 @@ const SettingsPage = () => {
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50">
       {/* Sidebar */}
-      {!isMobile && (
-        <Sidebar
-          isOpen={sidebarOpen}
-          onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen', JSON.stringify(false)) } catch {} }}
-          onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
-        />
-      )}
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => { setSidebarOpen(false); try { localStorage.setItem('sidebarOpen', JSON.stringify(false)) } catch {} }}
+        onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
+      />
       
       {/* Main Content */}
       <main className={`flex-1 p-6 overflow-x-hidden relative z-10 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
@@ -245,9 +251,19 @@ const SettingsPage = () => {
           {/* Header Section - match module navbar style */}
           <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
             <div className="mb-1.5 pb-1.5 flex items-center justify-between gap-3">
-              <div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-white shadow-sm"
+                  aria-label="Toggle sidebar"
+                  title="Menu"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
                 <h1 className="text-xl font-bold text-[#1A1A1A]">Settings</h1>
-                <p className="text-xs text-[#6B7280] mt-0.5">Manage your account security</p>
+                <p className="text-xs text-[#6B7280] mt-0.5">Manage your account</p>
               </div>
               <div className="flex items-center gap-2">
                 {/* No actions on Settings for now; keep space for consistency */}
