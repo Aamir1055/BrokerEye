@@ -2,7 +2,63 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useData } from '../../contexts/DataContext'
 import { brokerAPI } from '../../services/api'
 import { formatTime } from '../../utils/dateFormatter'
-          {/* Broker Rules tab removed in this branch */}
+function ClientPositionsModal({ client, onClose }) {
+  const { liveClients, allPositionsCache, allOrdersCache } = useData()
+
+  // Core client/state
+  const [clientData, setClientData] = useState(client || {})
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  // Positions / Orders / Net positions
+  const [positions, setPositions] = useState([])
+  const [orders, setOrders] = useState([])
+  const [netPositions, setNetPositions] = useState([])
+
+  // Deals data
+  const [deals, setDeals] = useState([])
+  const [allDeals, setAllDeals] = useState([])
+  const [filteredDeals, setFilteredDeals] = useState([])
+  const [dealsLoading, setDealsLoading] = useState(false)
+  const [totalDealsCount, setTotalDealsCount] = useState(0)
+  const [currentDateFilter, setCurrentDateFilter] = useState({ from: 0, to: 0 })
+  const [hasAppliedFilter, setHasAppliedFilter] = useState(false)
+  const [dealsServerLimitReached, setDealsServerLimitReached] = useState(false)
+
+  // Tabs
+  const [activeTab, setActiveTab] = useState('positions')
+
+  // Filters / search
+  const [showFilterDropdown, setShowFilterDropdown] = useState(null)
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false)
+  const [columnFilters, setColumnFilters] = useState({})
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // Date filter inputs
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+  const [selectedPreset, setSelectedPreset] = useState('')
+
+  // Rules state (residual references)
+  const [rulesLoading, setRulesLoading] = useState(false)
+  const [availableRules, setAvailableRules] = useState([])
+  const [clientRules, setClientRules] = useState([])
+  const [selectedTimeParam, setSelectedTimeParam] = useState({})
+
+  // Funds operations
+  const [operationLoading, setOperationLoading] = useState(false)
+  const [operationError, setOperationError] = useState('')
+  const [operationSuccess, setOperationSuccess] = useState('')
+  const [operationType, setOperationType] = useState('deposit')
+  const [amount, setAmount] = useState('')
+  const [comment, setComment] = useState('')
+
+  const [opSelectOpen, setOpSelectOpen] = useState(false)
+  const [amountPresetOpen, setAmountPresetOpen] = useState(false)
+  const [amountDropdownUp, setAmountDropdownUp] = useState(false)
+  const [amountDropdownMaxH, setAmountDropdownMaxH] = useState(160)
+  const amountPresetRef = useRef(null)
+  const amountInputRef = useRef(null)
   const filterRefs = useRef({})
   const searchRef = useRef(null)
   
@@ -3139,263 +3195,11 @@ import { formatTime } from '../../utils/dateFormatter'
             </div>
           )}
 
-          {/* Money Transactions Tab */}
-          {activeTab === 'funds' && (
-            <div>
-              <div className="p-0">
-                <h3 className="text-2xl font-semibold text-gray-900 mb-6">Balance</h3>
-                
-                {/* Success Message */}
-                {operationSuccess && (
-                  <div className="mb-3 bg-green-50 border-l-4 border-green-500 rounded-r p-2">
-                    <div className="flex items-center gap-1.5">
-                      <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-green-700 text-xs">{operationSuccess}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Error Message */}
-                {operationError && (
-                  <div className="mb-3 bg-red-50 border-l-4 border-red-500 rounded-r p-2">
-                    <div className="flex items-center gap-1.5">
-                      <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-red-700 text-xs">{operationError}</span>
-                    </div>
-                  </div>
-                )}
-
-                <form onSubmit={handleFundsOperation} className="space-y-6">
-                  {/* Operation Type + Amount */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-6 pt-2">
-                    <div ref={opSelectRef} className="relative">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Operation Type</label>
-                      <button
-                        type="button"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-left text-sm bg-white text-gray-900 flex items-center justify-between"
-                        onClick={() => setOpSelectOpen((o) => !o)}
-                      >
-                        <span>{operationOptions.find(o => o.value === operationType)?.label || 'Select'}</span>
-                        <svg className={`w-4 h-4 text-gray-500 transition-transform ${opSelectOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.08z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                      {opSelectOpen && (
-                        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
-                          {operationOptions.map((opt) => (
-                            <div
-                              key={opt.value}
-                              role="option"
-                              onClick={() => { setOperationType(opt.value); setOpSelectOpen(false); setOperationSuccess(''); setOperationError(''); }}
-                              className={`px-4 py-2 text-sm cursor-pointer hover:bg-blue-100 hover:text-blue-700 ${operationType === opt.value ? 'bg-blue-50 text-blue-700' : 'text-gray-800'}`}
-                            >
-                              {opt.label}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="pr-6" ref={amountInputRef}>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
-                      <div className="relative">
-                        <button
-                          type="button"
-                          ref={amountButtonRef}
-                          onClick={() => {
-                            setAmountPresetOpen((o) => !o)
-                            try {
-                              const rect = amountButtonRef.current?.getBoundingClientRect() || { top: 0, bottom: 0 }
-                              const viewportH = window.innerHeight || document.documentElement.clientHeight || 800
-                              const spaceBelow = Math.max(0, viewportH - rect.bottom)
-                              const spaceAbove = Math.max(0, rect.top)
-                              const preferUp = spaceBelow < 280 && spaceAbove > spaceBelow
-                              setAmountDropdownUp(preferUp)
-                              const maxH = Math.max(180, Math.min(320, (preferUp ? (spaceAbove - 24) : (spaceBelow - 24))))
-                              setAmountDropdownMaxH(maxH)
-                            } catch {}
-                          }}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg text-left text-sm bg-white text-gray-900 flex items-center justify-between"
-                        >
-                          <span>{amount ? formatIndian(amount) : 'Select Amount'}</span>
-                          <svg className={`w-4 h-4 text-gray-500 transition-transform ${amountPresetOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.08z" clipRule="evenodd" />
-                          </svg>
-                        </button>
-                        {amountPresetOpen && (
-                          <div
-                            ref={amountPresetRef}
-                            className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden overflow-y-auto"
-                            onWheel={(e) => { e.stopPropagation() }}
-                            style={{
-                              overscrollBehavior: 'contain',
-                              maxHeight: amountDropdownMaxH,
-                              ...(amountDropdownUp
-                                ? { bottom: '100%', marginBottom: '0.5rem' }
-                                : { top: '100%', marginTop: '0.5rem' })
-                            }}
-                          >
-                            {AMOUNT_PRESETS.map((val) => (
-                              <div
-                                key={val}
-                                role="option"
-                                onClick={() => { setAmount(String(val)); setAmountPresetOpen(false); setOperationError(''); setOperationSuccess(''); }}
-                                className={`px-4 py-2 text-sm cursor-pointer hover:bg-blue-100 hover:text-blue-700 ${amount && Number(amount) === val ? 'bg-blue-50 text-blue-700' : 'text-gray-800'}`}
-                              >
-                                {formatIndian(val)}
-                              </div>
-                            ))}
-                            <div className="h-1" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Comment */}
-                  <div className="px-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Comment (Optional)</label>
-                    <textarea
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      placeholder="Add Comments for this Transaction"
-                      rows="4"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400 resize-none"
-                    />
-                  </div>
-
-                  {/* Divider below comment */}
-                  <div className="px-6">
-                    <div className="border-t border-gray-200 my-4" />
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex justify-between items-center pt-2 px-6 pb-6">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAmount('')
-                        setComment('')
-                        setOperationSuccess('')
-                        setOperationError('')
-                      }}
-                      className="w-[45%] px-4 py-3 text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-100 rounded-full hover:bg-blue-100 transition-colors"
-                    >
-                      Clear
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={operationLoading}
-                      className="w-[45%] px-4 py-3 text-sm font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-700 disabled:bg-blue-400 transition-all inline-flex items-center justify-center gap-2"
-                    >
-                      {operationLoading ? (
-                        <>
-                          <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                          Submit
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {/* Broker Rules Tab */}
-          {activeTab === 'rules' && (
-            <div>
-              {rulesLoading ? (
-                <div className="text-center py-8">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  <p className="text-sm text-gray-500 mt-2">Loading rules...</p>
-                </div>
-              ) : (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-[#EFF6FF] border-b border-blue-200">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Rule Name</th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Time Parameter</th>
-                          <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Toggle</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {availableRules.filter(r => r.is_active).map((rule) => {
-                          const clientRule = clientRules.find(cr => cr.rule_code === rule.rule_code)
-                          const isApplied = clientRule && clientRule.is_active === true
-                          const requiresTimeParam = rule.requires_time_parameter
-                          const timeOptions = rule.available_time_parameters || []
-                          const currentTimeParam = clientRule?.time_parameter || ''
-                          
-                          return (
-                            <tr key={rule.id} className="bg-white hover:bg-gray-50 transition-colors">
-                              <td className="px-4 py-3 text-sm text-gray-900 font-medium">{rule.rule_name}</td>
-                              <td className="px-4 py-3">
-                                {requiresTimeParam ? (
-                                  <select
-                                    value={selectedTimeParam[rule.rule_code] || currentTimeParam || ''}
-                                    onChange={(e) => setSelectedTimeParam(prev => ({ ...prev, [rule.rule_code]: e.target.value }))}
-                                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                  >
-                                    <option value="">Select time</option>
-                                    {timeOptions.map((time) => (
-                                      <option key={time} value={time}>{time}</option>
-                                    ))}
-                                  </select>
-                                ) : (
-                                  <span className="text-sm text-gray-400">-</span>
-                                )}
-                              </td>
-                              <td className="px-4 py-3">
-                                <div className="flex justify-center">
-                                  <button
-                                    onClick={() => isApplied ? handleRemoveRule(rule.rule_code) : handleApplyRule(rule)}
-                                    disabled={rulesLoading}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-                                      isApplied ? 'bg-blue-600' : 'bg-gray-300'
-                                    }`}
-                                  >
-                                    <span
-                                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                        isApplied ? 'translate-x-6' : 'translate-x-1'
-                                      }`}
-                                    />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-        </div>
-
           {/* Summary Cards - Fixed at Bottom */}
-          <div className="">
+          <div className="space-y-1">
           {/* Show face cards even if there are no open positions (missing values default to 0) */}
           {activeTab === 'positions' && (
-            <div className="space-y-1">
+            <div>
               {/* Positions + Deals Summary face cards in 2 rows of Excel-like cells */}
               {(() => {
                 // Build first row: fixed position & money cards
