@@ -180,55 +180,59 @@ const ClientDashboard = ({ totals, clients, totalClients, rebateTotals }) => {
         pnl: totals?.dailyPnL || 0,
         deposits: totals?.dailyDeposit || 0,
         withdrawals: totals?.dailyWithdrawal || 0,
-        netProfit: totals?.dailyPnL || 0,
+        soCompensationIn: totals?.dailySOCompensationIn || 0,
+        swap: totals?.dailySwap || 0,
         // Account Summary
-        netFlow: (totals?.dailyDeposit || 0) - (totals?.dailyWithdrawal || 0),
-        bonusCredit: (totals?.dailyBonusIn || 0) - (totals?.dailyBonusOut || 0),
+        netDW: (totals?.dailyDeposit || 0) - (totals?.dailyWithdrawal || 0),
+        netBonus: (totals?.dailyBonusIn || 0) - (totals?.dailyBonusOut || 0),
         floatingPL: totals?.floating || 0,
-        marginUsed: totals?.margin || 0,
-        freeMargin: totals?.marginFree || 0
+        margin: totals?.margin || 0,
+        marginFree: totals?.marginFree || 0
       },
       week: {
         pnl: totals?.thisWeekPnL || 0,
         deposits: totals?.thisWeekDeposit || 0,
         commission: totals?.thisWeekCommission || 0,
         withdrawals: totals?.thisWeekWithdrawal || 0,
-        netProfit: (totals?.thisWeekPnL || 0) + (totals?.thisWeekCommission || 0),
+        soCompensationIn: totals?.thisWeekSOCompensationIn || 0,
+        swap: totals?.thisWeekSwap || 0,
         // Account Summary
-        netFlow: (totals?.thisWeekDeposit || 0) - (totals?.thisWeekWithdrawal || 0),
-        bonusCredit: (totals?.thisWeekBonusIn || 0) - (totals?.thisWeekBonusOut || 0),
-        adjustments: totals?.thisWeekCorrection || 0,
+        netWeekDW: (totals?.thisWeekDeposit || 0) - (totals?.thisWeekWithdrawal || 0),
+        netWeekBonus: (totals?.thisWeekBonusIn || 0) - (totals?.thisWeekBonusOut || 0),
+        thisWeekCorrection: totals?.thisWeekCorrection || 0,
         floatingPL: totals?.floating || 0,
-        marginUsed: totals?.margin || 0,
-        freeMargin: totals?.marginFree || 0
+        margin: totals?.margin || 0,
+        marginFree: totals?.marginFree || 0
       },
       month: {
         pnl: totals?.thisMonthPnL || 0,
         deposits: totals?.thisMonthDeposit || 0,
         commission: totals?.thisMonthCommission || 0,
         withdrawals: totals?.thisMonthWithdrawal || 0,
-        netProfit: (totals?.thisMonthPnL || 0) + (totals?.thisMonthCommission || 0),
+        soCompensationIn: totals?.thisMonthSOCompensationIn || 0,
+        swap: totals?.thisMonthSwap || 0,
         // Account Summary
-        netFlow: (totals?.thisMonthDeposit || 0) - (totals?.thisMonthWithdrawal || 0),
-        bonusCredit: (totals?.thisMonthBonusIn || 0) - (totals?.thisMonthBonusOut || 0),
-        adjustments: totals?.thisMonthCorrection || 0,
+        netMonthDW: (totals?.thisMonthDeposit || 0) - (totals?.thisMonthWithdrawal || 0),
+        netMonthBonus: (totals?.thisMonthBonusIn || 0) - (totals?.thisMonthBonusOut || 0),
+        thisMonthCorrection: totals?.thisMonthCorrection || 0,
         floatingPL: totals?.floating || 0,
-        marginUsed: totals?.margin || 0,
-        freeMargin: totals?.marginFree || 0
+        margin: totals?.margin || 0,
+        marginFree: totals?.marginFree || 0
       },
       lifetime: {
         pnl: totals?.lifetimePnL || 0,
         deposits: totals?.lifetimeDeposit || 0,
-        commission: totals?.commission || 0,
+        commission: totals?.lifetimeCommission || totals?.commission || 0,
         withdrawals: totals?.lifetimeWithdrawal || 0,
-        netProfit: (totals?.lifetimePnL || 0) + (totals?.commission || 0),
+        soCompensationIn: totals?.lifetimeSOCompensationIn || 0,
+        swap: totals?.lifetimeSwap || 0,
         // Account Summary
-        netFlow: (totals?.lifetimeDeposit || 0) - (totals?.lifetimeWithdrawal || 0),
-        bonusCredit: (totals?.lifetimeBonusIn || 0) - (totals?.lifetimeBonusOut || 0),
-        adjustments: totals?.lifetimeCorrection || 0,
+        netLifetimeDW: (totals?.lifetimeDeposit || 0) - (totals?.lifetimeWithdrawal || 0),
+        netLifetimeBonus: (totals?.lifetimeBonusIn || 0) - (totals?.lifetimeBonusOut || 0),
+        lifetimeCorrection: totals?.lifetimeCorrection || 0,
         floatingPL: totals?.floating || 0,
-        marginUsed: totals?.margin || 0,
-        freeMargin: totals?.marginFree || 0
+        margin: totals?.margin || 0,
+        marginFree: totals?.marginFree || 0
       }
     }
     return data[performanceTab]
@@ -447,10 +451,11 @@ const ClientDashboard = ({ totals, clients, totalClients, rebateTotals }) => {
 
             <div className="space-y-2">
               {[
-                { label: 'Deposits', value: performanceData.deposits, icon: FiTrendingUp, bgColor: 'bg-blue-100' },
-                performanceData.commission !== undefined && { label: 'Commission', value: performanceData.commission, icon: FiDollarSign, bgColor: 'bg-purple-100' },
-                { label: 'Withdrawals', value: performanceData.withdrawals, icon: FiTrendingDown, bgColor: 'bg-orange-100' },
-                { label: 'Net Profit', value: performanceData.netProfit, icon: FiAward, bgColor: 'bg-green-100' }
+                { label: performanceTab === 'lifetime' ? 'Lifetime Deposit' : performanceTab === 'week' ? 'This Week Deposit' : performanceTab === 'month' ? 'This Month Deposit' : 'Daily Deposit', value: performanceData.deposits, icon: FiTrendingUp, bgColor: 'bg-blue-100' },
+                (performanceTab !== 'daily') && performanceData.commission !== undefined && { label: performanceTab === 'lifetime' ? 'Lifetime Commission' : performanceTab === 'week' ? 'This Week Commission' : 'This Month Commission', value: performanceData.commission, icon: FiDollarSign, bgColor: 'bg-purple-100' },
+                { label: performanceTab === 'lifetime' ? 'Lifetime Withdrawal' : performanceTab === 'week' ? 'This Week Withdrawal' : performanceTab === 'month' ? 'This Month Withdrawal' : 'Daily Withdrawal', value: performanceData.withdrawals, icon: FiTrendingDown, bgColor: 'bg-orange-100' },
+                (performanceTab !== 'daily') && performanceData.swap !== undefined && { label: performanceTab === 'lifetime' ? 'Lifetime Swap' : performanceTab === 'week' ? 'This Week Swap' : 'This Month Swap', value: performanceData.swap, icon: FiRefreshCw, bgColor: 'bg-teal-100' },
+                performanceData.soCompensationIn !== undefined && { label: performanceTab === 'lifetime' ? 'Lifetime SO Compensation In' : performanceTab === 'week' ? 'This Week SO Compensation In' : performanceTab === 'month' ? 'This Month SO Compensation In' : 'Daily SO Compensation In', value: performanceData.soCompensationIn, icon: FiAward, bgColor: 'bg-green-100' }
               ].filter(Boolean).map((item, index) => (
                 <div key={index} className="flex items-center justify-between p-2.5 bg-white rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
                   <div className="flex items-center gap-2.5">
@@ -476,12 +481,9 @@ const ClientDashboard = ({ totals, clients, totalClients, rebateTotals }) => {
 
             <div className="space-y-2">
               {[
-                { label: 'Net Flow', value: performanceData.netFlow },
-                { label: 'Bonus + Credit', value: performanceData.bonusCredit },
-                performanceData.adjustments !== undefined && { label: 'Adjustments', value: performanceData.adjustments },
-                { label: 'Floating P/L', value: performanceData.floatingPL },
-                { label: 'Margin Used', value: performanceData.marginUsed },
-                { label: 'Free Margin', value: performanceData.freeMargin }
+                { label: performanceTab === 'lifetime' ? 'NET Lifetime DW' : performanceTab === 'week' ? 'NET Week DW' : performanceTab === 'month' ? 'NET Monthly DW' : 'Daily Net D/W', value: performanceData.netLifetimeDW || performanceData.netWeekDW || performanceData.netMonthDW || performanceData.netDW },
+                { label: performanceTab === 'lifetime' ? 'NET Lifetime Bonus' : performanceTab === 'week' ? 'NET Week Bonus' : performanceTab === 'month' ? 'NET Monthly Bonus' : 'NET Daily Bonus', value: performanceData.netLifetimeBonus || performanceData.netWeekBonus || performanceData.netMonthBonus || performanceData.netBonus },
+                (performanceTab !== 'daily') && (performanceData.lifetimeCorrection !== undefined || performanceData.thisWeekCorrection !== undefined || performanceData.thisMonthCorrection !== undefined) && { label: performanceTab === 'lifetime' ? 'Lifetime Correction' : performanceTab === 'week' ? 'This Week Correction' : 'This Month Correction', value: performanceData.lifetimeCorrection || performanceData.thisWeekCorrection || performanceData.thisMonthCorrection }
               ].filter(Boolean).map((item, index) => (
                 <div key={index} className="flex items-center justify-between p-2.5 bg-white rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
                   <span className="text-xs font-medium text-gray-700">{item.label}</span>

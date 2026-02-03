@@ -4,8 +4,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-  // Broker branch runs at root
-  base: '/',
+  // Set base URL for subdirectory deployment
+  base: '/amari-capital-new/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
