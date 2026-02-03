@@ -106,7 +106,11 @@ api.interceptors.response.use(
     const originalRequest = error.config
     const status = error?.response?.status
     const networkErr = error?.code === 'ERR_NETWORK'
-    if (!error.response) {
+    
+    // Don't log canceled requests (expected during rapid filtering)
+    const isCanceled = axios.isCancel(error) || error.message === 'canceled' || error.code === 'ERR_CANCELED'
+    
+    if (!error.response && !isCanceled) {
       console.warn('[API] Error without response object:', error.message)
     }
 
@@ -123,15 +127,15 @@ api.interceptors.response.use(
     if (shouldAttemptRefresh) {
       originalRequest._retry = true
       // Only log once per refresh sequence to avoid noisy consoles when multiple requests 401 at once
-      if (!isRefreshing) {
-        console.warn('[API] 401 detected. Attempting token refresh. url=', originalRequest?.url)
+      if (!isRefreshing && DEBUG_LOGS) {
+        console.log('[API] 🔄 Access token expired, refreshing... (this is normal)', originalRequest?.url)
       }
 
       try {
         if (!isRefreshing) {
           isRefreshing = true
           const refresh_token = localStorage.getItem('refresh_token')
-          console.log('[API] 🔄 Initiating token refresh (primary attempt)...')
+          if (DEBUG_LOGS) console.log('[API] 🔄 Initiating token refresh (primary attempt)...')
 
           refreshPromise = rawApi
             .post('/api/auth/broker/refresh', { refresh_token })
@@ -144,7 +148,7 @@ api.interceptors.response.use(
               api.defaults.headers.common['Authorization'] = `Bearer ${newAccess}`
               ibApi.defaults.headers.common['Authorization'] = `Bearer ${newAccess}`
               broadcastTokenRefreshed(newAccess)
-              console.log('[API] ✅ Token refreshed (primary)')
+              if (DEBUG_LOGS) console.log('[API] ✅ Token refreshed (primary)')
               return newAccess
             })
             .catch(async (err) => {
