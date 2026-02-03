@@ -1252,26 +1252,6 @@ const ClientDetailsMobileModal = ({ client, onClose, allPositionsCache, allOrder
             >
               Deals <span className="text-[9px] opacity-75">({hasAppliedFilter ? totalDealsCount : 0})</span>
             </button>
-            <button
-              onClick={() => setActiveTab('funds')}
-              className={`flex-1 py-1 px-1.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
-                activeTab === 'funds'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Balance
-            </button>
-            <button
-              onClick={() => setActiveTab('rules')}
-              className={`flex-1 py-1 px-1.5 rounded-md text-[10px] font-medium transition-colors whitespace-nowrap ${
-                activeTab === 'rules'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Broker Rules
-            </button>
           </div>
         </div>
 

@@ -1,64 +1,81 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+﻿import { useState, useEffect, useRef, useMemo } from 'react'
 import { useData } from '../../contexts/DataContext'
 import { brokerAPI } from '../../services/api'
 import { formatTime } from '../../utils/dateFormatter'
-function ClientPositionsModal({ client, onClose }) {
-  const { liveClients, allPositionsCache, allOrdersCache } = useData()
+// Balance and Broker Rules tabs removed for this branch
 
-  // Core client/state
-  const [clientData, setClientData] = useState(client || {})
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+// Max number of deals to request in one fetch. Increase if needed.
+const CLIENT_DEALS_FETCH_LIMIT = 1000
 
-  // Positions / Orders / Net positions
+const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCache, allOrdersCache = [], onCacheUpdate }) => {
+  const [activeTab, setActiveTab] = useState('positions')
   const [positions, setPositions] = useState([])
   const [orders, setOrders] = useState([])
-  const [netPositions, setNetPositions] = useState([])
-
-  // Deals data
   const [deals, setDeals] = useState([])
-  const [allDeals, setAllDeals] = useState([])
-  const [filteredDeals, setFilteredDeals] = useState([])
+  const [loading, setLoading] = useState(true)
   const [dealsLoading, setDealsLoading] = useState(false)
-  const [totalDealsCount, setTotalDealsCount] = useState(0)
-  const [currentDateFilter, setCurrentDateFilter] = useState({ from: 0, to: 0 })
-  const [hasAppliedFilter, setHasAppliedFilter] = useState(false)
-  const [dealsServerLimitReached, setDealsServerLimitReached] = useState(false)
-
-  // Tabs
-  const [activeTab, setActiveTab] = useState('positions')
-
-  // Filters / search
-  const [showFilterDropdown, setShowFilterDropdown] = useState(null)
-  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false)
-  const [columnFilters, setColumnFilters] = useState({})
-  const [searchQuery, setSearchQuery] = useState('')
-
-  // Date filter inputs
-  const [fromDate, setFromDate] = useState('')
-  const [toDate, setToDate] = useState('')
-  const [selectedPreset, setSelectedPreset] = useState('')
-
-  // Rules state (residual references)
-  const [rulesLoading, setRulesLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [netPositions, setNetPositions] = useState([])
+  
+  // Broker Rules states
   const [availableRules, setAvailableRules] = useState([])
   const [clientRules, setClientRules] = useState([])
+  const [rulesLoading, setRulesLoading] = useState(false)
   const [selectedTimeParam, setSelectedTimeParam] = useState({})
-
-  // Funds operations
-  const [operationLoading, setOperationLoading] = useState(false)
-  const [operationError, setOperationError] = useState('')
-  const [operationSuccess, setOperationSuccess] = useState('')
+  
+  // Client data state (for updated balance/credit/equity)
+  const [clientData, setClientData] = useState(client)
+  // Pull live clients list so the modal reflects current Balance/Equity/Credit/PnL
+  const { clients: liveClients } = useData()
+  
+  // Funds management state
   const [operationType, setOperationType] = useState('deposit')
-  const [amount, setAmount] = useState('')
-  const [comment, setComment] = useState('')
-
   const [opSelectOpen, setOpSelectOpen] = useState(false)
+  const opSelectRef = useRef(null)
+  const operationOptions = [
+    { value: 'deposit', label: 'Deposit Funds' },
+    { value: 'withdrawal', label: 'Withdraw Funds' },
+    { value: 'credit_in', label: 'Credit In' },
+    { value: 'credit_out', label: 'Credit Out' }
+  ]
+  const [amount, setAmount] = useState('')
+  // Amount preset dropdown
   const [amountPresetOpen, setAmountPresetOpen] = useState(false)
-  const [amountDropdownUp, setAmountDropdownUp] = useState(false)
-  const [amountDropdownMaxH, setAmountDropdownMaxH] = useState(160)
-  const amountPresetRef = useRef(null)
   const amountInputRef = useRef(null)
+  const amountPresetRef = useRef(null)
+  const amountButtonRef = useRef(null)
+  const [amountDropdownUp, setAmountDropdownUp] = useState(false)
+  const [amountDropdownMaxH, setAmountDropdownMaxH] = useState(320)
+  const formatIndian = (n) => {
+    try { return new Intl.NumberFormat('en-IN').format(Number(n)) } catch { return String(n) }
+  }
+  const AMOUNT_PRESETS = [
+    1000, 5000, 10000, 25000, 50000,
+    100000, 200000, 500000,
+    1000000, 2000000, 5000000,
+    10000000, 20000000, 50000000
+  ]
+  const [comment, setComment] = useState('')
+  const [operationLoading, setOperationLoading] = useState(false)
+  const [operationSuccess, setOperationSuccess] = useState('')
+  const [operationError, setOperationError] = useState('')
+  
+  // Date filter state
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+  const [filteredDeals, setFilteredDeals] = useState([])
+  const [allDeals, setAllDeals] = useState([])
+  const [hasAppliedFilter, setHasAppliedFilter] = useState(false)
+  const [selectedPreset, setSelectedPreset] = useState('')
+  const [dealsServerLimitReached, setDealsServerLimitReached] = useState(false)
+  const [totalDealsCount, setTotalDealsCount] = useState(0)
+  const [currentDateFilter, setCurrentDateFilter] = useState({ from: 0, to: 0 })
+  
+  // Search and filter states for positions
+  const [searchQuery, setSearchQuery] = useState('')
+  const [columnFilters, setColumnFilters] = useState({})
+  const [showFilterDropdown, setShowFilterDropdown] = useState(null)
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false)
   const filterRefs = useRef({})
   const searchRef = useRef(null)
   
@@ -605,16 +622,16 @@ function ClientPositionsModal({ client, onClose }) {
 
   const fetchAvailableRules = async () => {
     try {
-      console.log('[ClientPositionsModal] 🔍 Fetching available rules...')
+      console.log('[ClientPositionsModal] ≡ƒöì Fetching available rules...')
       setRulesLoading(true)
       const response = await brokerAPI.getAvailableRules()
-      console.log('[ClientPositionsModal] ✅ Rules response:', response)
+      console.log('[ClientPositionsModal] Γ£à Rules response:', response)
       if (response.status === 'success') {
         setAvailableRules(response.data.rules || [])
-        console.log('[ClientPositionsModal] 📋 Available rules set:', response.data.rules?.length || 0)
+        console.log('[ClientPositionsModal] ≡ƒôï Available rules set:', response.data.rules?.length || 0)
       }
     } catch (error) {
-      console.error('[ClientPositionsModal] ❌ Failed to fetch available rules:', error)
+      console.error('[ClientPositionsModal] Γ¥î Failed to fetch available rules:', error)
     } finally {
       setRulesLoading(false)
     }
@@ -622,24 +639,24 @@ function ClientPositionsModal({ client, onClose }) {
 
   const fetchClientRules = async () => {
     try {
-      console.log('[ClientPositionsModal] 🔍 Fetching client rules for login:', client.login)
+      console.log('[ClientPositionsModal] ≡ƒöì Fetching client rules for login:', client.login)
       const response = await brokerAPI.getClientRules(client.login)
-      console.log('[ClientPositionsModal] ✅ Client rules response:', response)
+      console.log('[ClientPositionsModal] Γ£à Client rules response:', response)
       if (response.status === 'success') {
         const rules = response.data.rules || []
-        console.log('[ClientPositionsModal] 📋 Setting client rules to:', rules.map(r => ({ code: r.rule_code, name: r.rule_name })))
+        console.log('[ClientPositionsModal] ≡ƒôï Setting client rules to:', rules.map(r => ({ code: r.rule_code, name: r.rule_name })))
         setClientRules(rules)
-        console.log('[ClientPositionsModal] 📋 Client rules state updated. Count:', rules.length)
+        console.log('[ClientPositionsModal] ≡ƒôï Client rules state updated. Count:', rules.length)
       }
     } catch (error) {
-      console.error('[ClientPositionsModal] ❌ Failed to fetch client rules:', error)
+      console.error('[ClientPositionsModal] Γ¥î Failed to fetch client rules:', error)
       setClientRules([])
     }
   }
 
   const handleApplyRule = async (rule) => {
     try {
-      console.log('[ClientPositionsModal] ➕ Applying/Activating rule:', rule.rule_code, 'for login:', client.login)
+      console.log('[ClientPositionsModal] Γ₧ò Applying/Activating rule:', rule.rule_code, 'for login:', client.login)
       setRulesLoading(true)
       
       // Find the matching available rule to check if time parameter is required
@@ -656,12 +673,12 @@ function ClientPositionsModal({ client, onClose }) {
         return
       }
 
-      console.log('[ClientPositionsModal] 📤 Sending apply request with time:', timeParameter)
+      console.log('[ClientPositionsModal] ≡ƒôñ Sending apply request with time:', timeParameter)
       const response = await brokerAPI.applyClientRule(client.login, rule.rule_code, timeParameter)
-      console.log('[ClientPositionsModal] ✅ Apply rule response:', response)
+      console.log('[ClientPositionsModal] Γ£à Apply rule response:', response)
       
       if (response.status === 'success') {
-        console.log('[ClientPositionsModal] 📋 Rule applied/activated successfully')
+        console.log('[ClientPositionsModal] ≡ƒôï Rule applied/activated successfully')
         // Clear selected time parameter after successful application
         setSelectedTimeParam(prev => {
           const updated = { ...prev }
@@ -670,13 +687,13 @@ function ClientPositionsModal({ client, onClose }) {
         })
         // Refresh client rules from API to get updated is_active status
         await fetchClientRules()
-        console.log('[ClientPositionsModal] ✅ Rule application completed')
+        console.log('[ClientPositionsModal] Γ£à Rule application completed')
       } else {
-        console.error('[ClientPositionsModal] ❌ Apply rule failed:', response.message)
+        console.error('[ClientPositionsModal] Γ¥î Apply rule failed:', response.message)
         alert(response.message || 'Failed to apply rule')
       }
     } catch (error) {
-      console.error('[ClientPositionsModal] ❌ Error applying rule:', error)
+      console.error('[ClientPositionsModal] Γ¥î Error applying rule:', error)
       alert('Failed to apply rule: ' + (error.response?.data?.message || error.message))
     } finally {
       setRulesLoading(false)
@@ -685,22 +702,22 @@ function ClientPositionsModal({ client, onClose }) {
 
   const handleRemoveRule = async (ruleCode) => {
     try {
-      console.log('[ClientPositionsModal] 🗑️ Deactivating rule:', ruleCode, 'for login:', client.login)
+      console.log('[ClientPositionsModal] ≡ƒùæ∩╕Å Deactivating rule:', ruleCode, 'for login:', client.login)
       setRulesLoading(true)
       const response = await brokerAPI.removeClientRule(client.login, ruleCode)
-      console.log('[ClientPositionsModal] ✅ Remove rule response:', response)
+      console.log('[ClientPositionsModal] Γ£à Remove rule response:', response)
       
       if (response.status === 'success') {
-        console.log('[ClientPositionsModal] 📋 Rule deactivated successfully')
+        console.log('[ClientPositionsModal] ≡ƒôï Rule deactivated successfully')
         // Refresh client rules from API to get updated is_active status
         await fetchClientRules()
-        console.log('[ClientPositionsModal] ✅ Rule deactivation completed')
+        console.log('[ClientPositionsModal] Γ£à Rule deactivation completed')
       } else {
-        console.error('[ClientPositionsModal] ❌ Remove rule failed:', response.message)
+        console.error('[ClientPositionsModal] Γ¥î Remove rule failed:', response.message)
         alert(response.message || 'Failed to remove rule')
       }
     } catch (error) {
-      console.error('[ClientPositionsModal] ❌ Error removing rule:', error)
+      console.error('[ClientPositionsModal] Γ¥î Error removing rule:', error)
       alert('Failed to remove rule: ' + (error.response?.data?.message || error.message))
     } finally {
       setRulesLoading(false)
@@ -1765,7 +1782,6 @@ function ClientPositionsModal({ client, onClose }) {
             >
               Deals ({totalDealsCount || deals.length})
             </button>
-            
           </div>
 
           {/* Controls for Positions Tab (no pagination) */}
@@ -1789,21 +1805,233 @@ function ClientPositionsModal({ client, onClose }) {
                       className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48"
                       style={{ maxHeight: '300px', overflowY: 'auto' }}
                     >
-                      <div className="px-2 py-1">
-                        {Object.keys(positionsVisibleColumns).map((key) => (
-                          <label key={key} className="flex items-center justify-between px-2 py-1 hover:bg-gray-50 cursor-pointer">
-                            <span className="text-xs text-gray-700 capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
-                            <input
-                              type="checkbox"
-                              className="h-3.5 w-3.5"
-                              checked={positionsVisibleColumns[key]}
-                              onChange={() => togglePositionsColumn(key)}
-                            />
-                          </label>
-                        ))}
+                      <div className="px-2 py-1 border-b border-gray-100">
+                        <p className="text-xs font-semibold text-gray-700 uppercase">Show/Hide Columns</p>
                       </div>
+                      {positionsColumns.map(col => (
+                        <label
+                          key={col.key}
+                          className="flex items-center px-2 py-1 hover:bg-blue-50 cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={positionsVisibleColumns[col.key] === true}
+                            onChange={() => togglePositionsColumn(col.key)}
+                            className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
+                          />
+                          <span className="ml-2 text-xs text-gray-700">{col.label}</span>
+                        </label>
+                      ))}
                     </div>
                   )}
+                </div>
+
+                {/* Card Filter Button */}
+                <div className="relative" ref={dealStatsFilterRef}>
+                  <button
+                    onClick={() => setShowDealStatsFilter(v => !v)}
+                    className="text-gray-600 hover:text-gray-900 px-2 py-0.5 rounded hover:bg-gray-100 border border-gray-300 transition-colors inline-flex items-center gap-1 text-xs"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M6 8h12M9 12h6M11 16h2"/></svg>
+                    Card Filter
+                  </button>
+                  {showDealStatsFilter && (
+                    <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-50 w-64 max-h-80 overflow-y-auto">
+                      <p className="text-[11px] font-semibold text-gray-700 uppercase mb-1">Position Metrics</p>
+                      {[
+                        ['pf_totalPositions','Total Positions'],
+                        ['pf_totalVolume','Total Volume'],
+                        ['pf_totalPL','Floating Profit'],
+                        ['pf_lifetimePnL','Lifetime PnL'],
+                        ['pf_bookPnL','Book PnL']
+                      ].map(([key,label]) => (
+                        <label key={key} className="flex items-center gap-2 py-1 px-1 hover:bg-gray-50 rounded cursor-pointer">
+                          <input type="checkbox" className="w-3 h-3" checked={fixedCardVisibility[key]} onChange={() => setFixedCardVisibility(prev => ({...prev, [key]: !prev[key]}))} />
+                          <span className="text-[12px] text-gray-700">{label}</span>
+                        </label>
+                      ))}
+                      <div className="h-px bg-gray-200 my-2" />
+                      <p className="text-[11px] font-semibold text-gray-700 uppercase mb-1">Money Metrics</p>
+                      {[
+                        ['pf_balance','Balance'],
+                        ['pf_credit','Credit'],
+                        ['pf_equity','Equity']
+                      ].map(([key,label]) => (
+                        <label key={key} className="flex items-center gap-2 py-1 px-1 hover:bg-gray-50 rounded cursor-pointer">
+                          <input type="checkbox" className="w-3 h-3" checked={fixedCardVisibility[key]} onChange={() => setFixedCardVisibility(prev => ({...prev, [key]: !prev[key]}))} />
+                          <span className="text-[12px] text-gray-700">{label}</span>
+                        </label>
+                      ))}
+                      <div className="h-px bg-gray-200 my-2" />
+                      <p className="text-[11px] font-semibold text-gray-700 uppercase mb-1">Deals Summary</p>
+                      {(dealStats ? Object.keys({ ...dealStats }) : Object.keys(defaultDealStatVisibility))
+                        .sort()
+                        .map(key => (
+                        <label key={key} className="flex items-center gap-2 py-1 px-1 hover:bg-gray-50 rounded cursor-pointer">
+                          <input type="checkbox" className="w-3 h-3" checked={dealStatVisibility[key] ?? false} onChange={() => toggleDealStatKey(key)} />
+                          <span className="text-[12px] text-gray-700">{toTitle(key)}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* Controls for NET Tab (no pagination) */}
+          {activeTab === 'netpositions' && (
+            <div className="flex items-center justify-end gap-1.5 py-2">
+              <div className="flex items-center gap-1.5">
+                {/* Columns Button */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowNetColumnSelector(!showNetColumnSelector)}
+                    className="text-gray-600 hover:text-gray-900 px-2 py-0.5 rounded hover:bg-gray-100 border border-gray-300 transition-colors inline-flex items-center gap-1 text-xs"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                    Columns
+                  </button>
+                  {showNetColumnSelector && (
+                    <div
+                      ref={netColumnSelectorRef}
+                      className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48"
+                      style={{ maxHeight: '300px', overflowY: 'auto' }}
+                    >
+                      <div className="px-2 py-1 border-b border-gray-100">
+                        <p className="text-xs font-semibold text-gray-700 uppercase">Show/Hide Columns</p>
+                      </div>
+                      {netColumns.map(col => (
+                        <label
+                          key={col.key}
+                          className="flex items-center px-2 py-1 hover:bg-blue-50 cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={netVisibleColumns[col.key] === true}
+                            onChange={() => toggleNetColumn(col.key)}
+                            className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
+                          />
+                          <span className="ml-2 text-xs text-gray-700">{col.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Card Filter Button */}
+                <div className="relative" ref={netStatsFilterRef}>
+                  <button
+                    onClick={() => setShowNetStatsFilter(v => !v)}
+                    className="text-gray-600 hover:text-gray-900 px-2 py-0.5 rounded hover:bg-gray-100 border border-gray-300 transition-colors inline-flex items-center gap-1 text-xs"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M6 8h12M9 12h6M11 16h2"/></svg>
+                    Card Filter
+                  </button>
+                  {showNetStatsFilter && (
+                    <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-50 w-64 max-h-80 overflow-y-auto">
+                      <p className="text-[11px] font-semibold text-gray-700 uppercase mb-1">NET Summary</p>
+                      {[
+                        ['net_symbols','NET Symbols'],
+                        ['net_totalVolume','Total NET Volume'],
+                        ['net_buyPL','Buy Floating Profit'],
+                        ['net_sellPL','Sell Floating Profit']
+                      ].map(([key,label]) => (
+                        <label key={key} className="flex items-center gap-2 py-1 px-1 hover:bg-gray-50 rounded cursor-pointer">
+                          <input type="checkbox" className="w-3 h-3" checked={netCardVisibility[key]} onChange={() => setNetCardVisibility(prev => ({...prev, [key]: !prev[key]}))} />
+                          <span className="text-[12px] text-gray-700">{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Tab Content - Scrollable */}
+        <div className="flex-1 p-1 md:p-6 min-h-0 bg-white">
+          {activeTab === 'positions' && (
+            <div className="relative">
+              {loading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : positions.length === 0 ? (
+                <div className="text-center py-12">
+                  <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <p className="text-gray-500 text-sm">No open positions</p>
+                </div>
+              ) : (
+                <>
+                  
+                  {/* Search Bar */}
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="relative flex-1" ref={searchRef}>
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value)
+                          setShowSearchSuggestions(true)
+                        }}
+                        onFocus={() => setShowSearchSuggestions(true)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            setShowSearchSuggestions(false)
+                          }
+                        }}
+                        placeholder="Search by symbol, position, type, volume..."
+                        className="w-full pl-9 pr-10 py-2 text-sm text-gray-700 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400"
+                      />
+                      <svg 
+                        className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      {searchQuery && (
+                        <button
+                          onClick={() => {
+                            setSearchQuery('')
+                            setShowSearchSuggestions(false)
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                      
+                      {/* Search Suggestions Dropdown */}
+                      {showSearchSuggestions && getPositionSearchSuggestions().length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-[60] max-h-40 overflow-y-auto">
+                          {getPositionSearchSuggestions().map((suggestion, index) => (
+                            <button
+                              key={index}
+                              onClick={() => {
+                                setSearchQuery(suggestion.value)
+                                setShowSearchSuggestions(false)
+                              }}
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 transition-colors flex items-center gap-2"
+                            >
+                              <span className="text-gray-700">{suggestion.value}</span>
+                              <span className="ml-auto text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">{suggestion.type}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <div className="text-sm text-gray-600">
                       {filteredPositions.length} positions
                     </div>
@@ -2355,8 +2583,8 @@ function ClientPositionsModal({ client, onClose }) {
                   </table>
                 </div>
                   )}
-                
-)
+                </>
+)}
               {/* Floating Navigation Buttons - Smart visibility based on scroll position */}
               {!loading && groupedDisplayData?.regularPositions?.length > 0 && groupedDisplayData?.pendingOrders?.length > 0 && (
                 <div className="absolute top-1/2 -translate-y-1/2 right-2 flex flex-col gap-1.5 z-50">
@@ -2387,8 +2615,8 @@ function ClientPositionsModal({ client, onClose }) {
                       className="bg-red-600 hover:bg-red-700 text-white px-2 py-1.5 rounded-full shadow-lg transition-all duration-200 flex items-center gap-1.5 hover:scale-105 text-[10px] font-bold"
                       title="Jump to Pending Orders Section"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                       <span className="whitespace-nowrap">Pending Orders</span>
                     </button>
@@ -3195,11 +3423,273 @@ function ClientPositionsModal({ client, onClose }) {
             </div>
           )}
 
-          {/* Summary Cards - Fixed at Bottom */}
-          <div className="space-y-1">
+          {/* Money Transactions Tab */}
+          {activeTab === 'funds' && (
+            <div>
+              <div className="p-0">
+                <h3 className="text-2xl font-semibold text-gray-900 mb-6">Balance</h3>
+                
+                {/* Success Message */}
+                {operationSuccess && (
+                  <div className="mb-3 bg-green-50 border-l-4 border-green-500 rounded-r p-2">
+                    <div className="flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-green-700 text-xs">{operationSuccess}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error Message */}
+                {operationError && (
+                  <div className="mb-3 bg-red-50 border-l-4 border-red-500 rounded-r p-2">
+                    <div className="flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-red-700 text-xs">{operationError}</span>
+                    </div>
+                  </div>
+                )}
+
+                <form onSubmit={handleFundsOperation} className="space-y-6">
+                  {/* Operation Type + Amount */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-6 pt-2">
+                    <div ref={opSelectRef} className="relative">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Operation Type</label>
+                      <button
+                        type="button"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-left text-sm bg-white text-gray-900 flex items-center justify-between"
+                        onClick={() => setOpSelectOpen((o) => !o)}
+                      >
+                        <span>{operationOptions.find(o => o.value === operationType)?.label || 'Select'}</span>
+                        <svg className={`w-4 h-4 text-gray-500 transition-transform ${opSelectOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.08z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                      {opSelectOpen && (
+                        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                          {operationOptions.map((opt) => (
+                            <div
+                              key={opt.value}
+                              role="option"
+                              onClick={() => { setOperationType(opt.value); setOpSelectOpen(false); setOperationSuccess(''); setOperationError(''); }}
+                              className={`px-4 py-2 text-sm cursor-pointer hover:bg-blue-100 hover:text-blue-700 ${operationType === opt.value ? 'bg-blue-50 text-blue-700' : 'text-gray-800'}`}
+                            >
+                              {opt.label}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pr-6" ref={amountInputRef}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                      <div className="relative">
+                        {/* Editable input field */}
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg text-sm bg-white text-gray-900"
+                          placeholder="Enter amount"
+                          value={amount}
+                          onChange={(e) => { setAmount(e.target.value); setOperationError(''); setOperationSuccess(''); }}
+                        />
+                        {/* Dropdown toggle inside input area */}
+                        <button
+                          type="button"
+                          ref={amountButtonRef}
+                          onClick={() => {
+                            setAmountPresetOpen((o) => !o)
+                            try {
+                              const rect = amountButtonRef.current?.getBoundingClientRect() || { top: 0, bottom: 0 }
+                              const viewportH = window.innerHeight || document.documentElement.clientHeight || 800
+                              const spaceBelow = Math.max(0, viewportH - rect.bottom)
+                              const spaceAbove = Math.max(0, rect.top)
+                              const preferUp = spaceBelow < 280 && spaceAbove > spaceBelow
+                              setAmountDropdownUp(preferUp)
+                              const maxH = Math.max(180, Math.min(320, (preferUp ? (spaceAbove - 24) : (spaceBelow - 24))))
+                              setAmountDropdownMaxH(maxH)
+                            } catch {}
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-gray-600 hover:bg-gray-100"
+                          aria-label="Amount presets"
+                        >
+                          <svg className={`w-4 h-4 transition-transform ${amountPresetOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.08z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                        {amountPresetOpen && (
+                          <div
+                            ref={amountPresetRef}
+                            className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden overflow-y-auto"
+                            onWheel={(e) => { e.stopPropagation() }}
+                            style={{
+                              overscrollBehavior: 'contain',
+                              maxHeight: amountDropdownMaxH,
+                              ...(amountDropdownUp
+                                ? { bottom: '100%', marginBottom: '0.5rem' }
+                                : { top: '100%', marginTop: '0.5rem' })
+                            }}
+                          >
+                            {AMOUNT_PRESETS.map((val) => (
+                              <div
+                                key={val}
+                                role="option"
+                                onClick={() => { setAmount(String(val)); setAmountPresetOpen(false); setOperationError(''); setOperationSuccess(''); }}
+                                className={`px-4 py-2 text-sm cursor-pointer hover:bg-blue-100 hover:text-blue-700 ${amount && Number(amount) === val ? 'bg-blue-50 text-blue-700' : 'text-gray-800'}`}
+                              >
+                                {formatIndian(val)}
+                              </div>
+                            ))}
+                            <div className="h-1" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Comment */}
+                  <div className="px-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Comment (Optional)</label>
+                    <textarea
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      placeholder="Add Comments for this Transaction"
+                      rows="4"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 placeholder-gray-400 resize-none"
+                    />
+                  </div>
+
+                  {/* Divider below comment */}
+                  <div className="px-6">
+                    <div className="border-t border-gray-200 my-4" />
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex justify-between items-center pt-2 px-6 pb-6">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAmount('')
+                        setComment('')
+                        setOperationSuccess('')
+                        setOperationError('')
+                      }}
+                      className="w-[45%] px-4 py-3 text-sm font-semibold text-blue-700 bg-blue-50 border border-blue-100 rounded-full hover:bg-blue-100 transition-colors"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={operationLoading}
+                      className="w-[45%] px-4 py-3 text-sm font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-700 disabled:bg-blue-400 transition-all inline-flex items-center justify-center gap-2"
+                    >
+                      {operationLoading ? (
+                        <>
+                          <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Submit
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Broker Rules Tab */}
+          {activeTab === 'rules' && (
+            <div>
+              {rulesLoading ? (
+                <div className="text-center py-8">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <p className="text-sm text-gray-500 mt-2">Loading rules...</p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-[#EFF6FF] border-b border-blue-200">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Rule Name</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Time Parameter</th>
+                          <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">Toggle</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {availableRules.filter(r => r.is_active).map((rule) => {
+                          const clientRule = clientRules.find(cr => cr.rule_code === rule.rule_code)
+                          const isApplied = clientRule && clientRule.is_active === true
+                          const requiresTimeParam = rule.requires_time_parameter
+                          const timeOptions = rule.available_time_parameters || []
+                          const currentTimeParam = clientRule?.time_parameter || ''
+                          
+                          return (
+                            <tr key={rule.id} className="bg-white hover:bg-gray-50 transition-colors">
+                              <td className="px-4 py-3 text-sm text-gray-900 font-medium">{rule.rule_name}</td>
+                              <td className="px-4 py-3">
+                                {requiresTimeParam ? (
+                                  <select
+                                    value={selectedTimeParam[rule.rule_code] || currentTimeParam || ''}
+                                    onChange={(e) => setSelectedTimeParam(prev => ({ ...prev, [rule.rule_code]: e.target.value }))}
+                                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  >
+                                    <option value="">Select time</option>
+                                    {timeOptions.map((time) => (
+                                      <option key={time} value={time}>{time}</option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <span className="text-sm text-gray-400">-</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex justify-center">
+                                  <button
+                                    onClick={() => isApplied ? handleRemoveRule(rule.rule_code) : handleApplyRule(rule)}
+                                    disabled={rulesLoading}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                      isApplied ? 'bg-blue-600' : 'bg-gray-300'
+                                    }`}
+                                  >
+                                    <span
+                                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                        isApplied ? 'translate-x-6' : 'translate-x-1'
+                                      }`}
+                                    />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+        </div>
+
+        {/* Summary Cards - Fixed at Bottom */}
+  <div className="">
           {/* Show face cards even if there are no open positions (missing values default to 0) */}
           {activeTab === 'positions' && (
-            <div>
+            <div className="space-y-1">
               {/* Positions + Deals Summary face cards in 2 rows of Excel-like cells */}
               {(() => {
                 // Build first row: fixed position & money cards
