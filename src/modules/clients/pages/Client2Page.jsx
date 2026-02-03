@@ -5714,20 +5714,6 @@ const Client2Page = () => {
                                                 ) : (
                                                   // Expanded version when there are NO checkbox values
                                                   <div className="space-y-3">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                      <span className="text-xs font-semibold text-gray-700">Text Filters</span>
-                                                      {columnFilters[`${columnKey}_text`] && (
-                                                        <button
-                                                          onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            clearColumnFilter(columnKey)
-                                                          }}
-                                                          className="text-[10px] text-blue-600 hover:text-blue-800 font-medium"
-                                                        >
-                                                          Clear
-                                                        </button>
-                                                      )}
-                                                    </div>
 
                                                     {!textFilterTemp[columnKey] && initTextFilterTemp(columnKey)}
                                                     {(() => {
@@ -5785,17 +5771,27 @@ const Client2Page = () => {
                                                             </label>
                                                           </div>
                                                           
-                                                          {/* Apply Button */}
-                                                          <button
-                                                            onClick={() => {
-                                                              console.log('[Client2] Applying text filter for column:', columnKey)
-                                                              applyTextFilter(columnKey)
-                                                              setShowFilterDropdown(null)
-                                                            }}
-                                                            className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
-                                                          >
-                                                            OK
-                                                          </button>
+                                                          {/* Buttons */}
+                                                          <div className="flex gap-2">
+                                                            <button
+                                                              onClick={() => {
+                                                                setShowFilterDropdown(null)
+                                                              }}
+                                                              className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
+                                                            >
+                                                              Close
+                                                            </button>
+                                                            <button
+                                                              onClick={() => {
+                                                                console.log('[Client2] Applying text filter for column:', columnKey)
+                                                                applyTextFilter(columnKey)
+                                                                setShowFilterDropdown(null)
+                                                              }}
+                                                              className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
+                                                            >
+                                                              OK
+                                                            </button>
+                                                          </div>
                                                         </>
                                                       )
                                                     })()}
@@ -5806,58 +5802,6 @@ const Client2Page = () => {
 
                                               {/* Checkbox Value List */}
                                               <div className="flex-1 overflow-hidden flex flex-col">
-                                                {/* Search Bar */}
-                                                <div className="px-3 py-2 border-b border-gray-200">
-                                                  <div className="relative">
-                                                    <svg className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                                    </svg>
-                                                    <input
-                                                      type="text"
-                                                      placeholder="Search values..."
-                                                      value={searchQuery}
-                                                      onChange={(e) => setColumnValueSearch(prev => ({ ...prev, [columnKey]: e.target.value }))}
-                                                        onKeyDown={(e) => {
-                                                          if (e.key === 'Enter') {
-                                                            e.preventDefault();
-                                                            e.stopPropagation();
-                                                            const committed = columnValueSearch[columnKey] || ''
-                                                            setColumnValueSearchDebounce(prev => ({ ...prev, [columnKey]: committed }))
-                                                            // Reset and fetch with committed query; keep dropdown open
-                                                            setColumnValues(prev => ({ ...prev, [columnKey]: [] }))
-                                                            setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
-                                                            fetchColumnValuesWithSearch(columnKey, committed, true)
-                                                            // Also apply current checkbox selections without closing
-                                                            applyCheckboxFilter(columnKey, false)
-                                                          }
-                                                        }}
-                                                        className="w-full pl-7 pr-8 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900"
-                                                      />
-                                                    {searchQuery && searchQuery.trim() !== '' && (
-                                                      <button
-                                                        onClick={() => {
-                                                          // Clear the search and immediately fetch all values
-                                                          setColumnValueSearch(prev => ({ ...prev, [columnKey]: '' }))
-                                                          setColumnValueSearchDebounce(prev => {
-                                                            const newState = { ...prev }
-                                                            delete newState[columnKey]
-                                                            return newState
-                                                          })
-                                                          // Reset and fetch all values
-                                                          setColumnValues(prev => ({ ...prev, [columnKey]: [] }))
-                                                          setColumnValuesCurrentPage(prev => ({ ...prev, [columnKey]: 1 }))
-                                                          fetchColumnValues(columnKey, true)
-                                                        }}
-                                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
-                                                        aria-label="Clear search"
-                                                      >
-                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                        </svg>
-                                                      </button>
-                                                    )}
-                                                    </div>
-                                                  </div>
 
                                                 {/* Select Visible and Values List */}
                                                 <>
@@ -5957,41 +5901,23 @@ const Client2Page = () => {
                                                         </div>
                                                       )}
                                                     </div>
-                                                  ) : (
-                                                    <div className="flex items-center justify-center h-full min-h-[200px]">
-                                                      <div className="text-center">
-                                                        <svg className="w-12 h-12 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                                        </svg>
-                                                        <p className="text-sm font-medium text-gray-500">No values found</p>
-                                                        <p className="text-xs text-gray-400 mt-1">{searchQuery ? 'Try a different search' : 'No data available'}</p>
-                                                      </div>
-                                                    </div>
-                                                  )}
+                                                  ) : null}
                                                 </div>
                                                 </>
                                               </div>
 
-                                              {/* Footer actions: hide when inline text submenu is open to avoid duplicates */}
-                                              {openTextFilterColumn !== columnKey && (
+                                              {/* Footer actions: always show buttons */}
+                                              {allValues.length > 0 && (
                                                 <div className="px-3 py-2 border-t border-gray-200 flex gap-2">
                                                     <button
-                                                      onClick={() => setShowFilterDropdown(null)}
-                                                      className={allValues.length > 0 ? "flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300" : "w-full px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"}
+                                                      onClick={() => {
+                                                        applyCheckboxFilter(columnKey)
+                                                        setShowFilterDropdown(null)
+                                                      }}
+                                                      className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
                                                     >
-                                                      Close
+                                                      OK
                                                     </button>
-                                                    {allValues.length > 0 && (
-                                                      <button
-                                                        onClick={() => {
-                                                          applyCheckboxFilter(columnKey)
-                                                          setShowFilterDropdown(null)
-                                                        }}
-                                                        className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700"
-                                                      >
-                                                        OK
-                                                      </button>
-                                                    )}
                                                   </div>
                                               )}
                                             </>
