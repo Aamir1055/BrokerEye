@@ -34,6 +34,7 @@ const LiveDealingPage = () => {
   const [selectedLogin, setSelectedLogin] = useState(null) // For login details modal
   const [showGroupModal, setShowGroupModal] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
+  const [progressActive, setProgressActive] = useState(false)
   
   const [deals, setDeals] = useState([])
   const [newDealIds, setNewDealIds] = useState(new Set()) // Track new deals for blinking
@@ -174,7 +175,7 @@ const LiveDealingPage = () => {
   const isMountedRef = useRef(true)
   
   // Define string columns that should show text filters instead of number filters
-  const stringColumns = ['symbol', 'action', 'reason']
+  const stringColumns = ['symbol', 'action', 'reason', 'entry']
   const isStringColumn = (key) => stringColumns.includes(key)
   
   // Custom filter modal states
@@ -292,7 +293,7 @@ const LiveDealingPage = () => {
   const applyCustomNumberFilter = () => {
     if (!customFilterColumn || !customFilterValue1) return
 
-    const isTextColumn = ['login', 'symbol', 'action', 'reason'].includes(customFilterColumn)
+    const isTextColumn = ['login', 'symbol', 'action', 'reason', 'entry'].includes(customFilterColumn)
     
     const filterConfig = {
       type: customFilterType,
@@ -1490,7 +1491,9 @@ const LiveDealingPage = () => {
                         className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
                       >
                         <span>Text Filters</span>
-                        <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} style={{
+                          transform: (['entry'].includes(columnKey) ? 'rotate(180deg)' : 'none')
+                        }}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                         </svg>
                       </button>
@@ -1500,7 +1503,10 @@ const LiveDealingPage = () => {
                           data-number-filter
                           className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                           style={{
-                            left: 'calc(100% + 8px)',
+                            ...((['entry'].includes(columnKey))
+                              ? { right: 'calc(100% + 8px)', left: 'auto' }
+                              : { left: 'calc(100% + 8px)', right: 'auto' }
+                            ),
                             zIndex: 10000001
                           }}
                           onClick={(e) => e.stopPropagation()}
@@ -1744,6 +1750,11 @@ const LiveDealingPage = () => {
     return <LiveDealingModule />
   }
 
+  // Sync top header loader with initial API load and any subsequent loads
+  useEffect(() => {
+    setProgressActive(!!loading)
+  }, [loading])
+
   return (
     <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
       <Sidebar
@@ -1760,6 +1771,16 @@ const LiveDealingPage = () => {
       />
       
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
+        {/* YouTube-style Loading Bar */}
+        {progressActive && (
+          <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
+            <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg" style={{
+              width: '40%',
+              animation: 'loading 1.5s ease-in-out infinite',
+              transformOrigin: 'left center'
+            }}></div>
+          </div>
+        )}
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
           {/* Header Section */}
           <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
@@ -2223,30 +2244,7 @@ const LiveDealingPage = () => {
                 </tr>
               </thead>
 
-              {/* YouTube-style Loading Progress Bar - Below table header */}
-              {loading && (
-                <thead>
-                  <tr>
-                    <th colSpan={Object.values(visibleColumns).filter(v => v).length} className="p-0" style={{ height: '3px' }}>
-                      <div className="relative w-full h-full bg-gray-200 overflow-hidden">
-                        <style>{`
-                          @keyframes shimmerSlide {
-                            0% { transform: translateX(-100%); }
-                            100% { transform: translateX(400%); }
-                          }
-                          .shimmer-loading-bar {
-                            width: 30%;
-                            height: 100%;
-                            background: #2563eb;
-                            animation: shimmerSlide 0.9s linear infinite;
-                          }
-                        `}</style>
-                        <div className="shimmer-loading-bar absolute top-0 left-0 h-full" />
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
-              )}
+              {/* Top header loader replaces inline shimmer */}
 
               <tbody className="bg-white divide-y-2 divide-gray-200 text-sm">
                 {loading ? (

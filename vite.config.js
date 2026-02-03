@@ -4,8 +4,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-  // Set base path for amari-capital deployment
-  base: '/amari-capital/',
+  // Broker branch runs at root
+  base: '/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',

@@ -32,6 +32,7 @@ const PendingOrdersPage = () => {
   const [selectedLogin, setSelectedLogin] = useState(null) // For login details modal
   const [showGroupModal, setShowGroupModal] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
+  const [progressActive, setProgressActive] = useState(false)
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -45,9 +46,6 @@ const PendingOrdersPage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const searchRef = useRef(null)
-  
-  // Track if component is mounted to prevent updates after unmount
-  const isMountedRef = useRef(true)
   
   // Column visibility states
   const [showColumnSelector, setShowColumnSelector] = useState(false)
@@ -93,8 +91,7 @@ const PendingOrdersPage = () => {
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
   
-  // Custom filter modal states
-  const [showCustomFilterModal, setShowCustomFilterModal] = useState(false)
+  // Custom filter states
   const [customFilterColumn, setCustomFilterColumn] = useState(null)
   const [customFilterType, setCustomFilterType] = useState('equal')
   const [customFilterValue1, setCustomFilterValue1] = useState('')
@@ -102,14 +99,37 @@ const PendingOrdersPage = () => {
   const [customFilterOperator, setCustomFilterOperator] = useState('AND')
 
   // Define string columns that should show text filters instead of number filters
-  const stringColumns = ['symbol', 'type', 'state']
+  const stringColumns = ['login', 'symbol', 'type', 'state', 'time', 'timeSetup', 'timeUpdate', 'timeCreate']
   const isStringColumn = (key) => stringColumns.includes(key)
+
+  // Helper function to get order value by column key (handles multiple property names)
+  const getOrderValue = (order, columnKey) => {
+    if (columnKey === 'volume') {
+      return order.volumeCurrent ?? order.volume ?? order.volumeInitial
+    }
+    if (columnKey === 'priceOrder') {
+      return order.priceOrder ?? order.price ?? order.priceOpen ?? order.priceOpenExact ?? order.open_price
+    }
+    if (columnKey === 'priceCurrent') {
+      return order.priceTrigger ?? order.trigger
+    }
+    if (columnKey === 'sl') {
+      return order.priceSL ?? order.sl ?? order.stop_loss
+    }
+    if (columnKey === 'tp') {
+      return order.priceTP ?? order.tp ?? order.take_profit
+    }
+    if (columnKey === 'time') {
+      return order.timeSetup ?? order.timeUpdate ?? order.timeCreate ?? order.updated_at
+    }
+    return order[columnKey]
+  }
 
   // Column filter helper functions
   const getUniqueColumnValues = (columnKey) => {
     const values = new Set()
     cachedOrders.forEach(order => {
-      const value = order[columnKey]
+      const value = getOrderValue(order, columnKey)
       if (value !== null && value !== undefined && value !== '') {
         values.add(value)
       }
@@ -166,7 +186,8 @@ const PendingOrdersPage = () => {
   const clearColumnFilter = (columnKey) => {
     setColumnFilters(prev => {
       const numberFilterKey = `${columnKey}_number`
-      const { [columnKey]: _, [numberFilterKey]: __, ...rest } = prev
+      const textFilterKey = `${columnKey}_text`
+      const { [columnKey]: _, [numberFilterKey]: __, [textFilterKey]: ___, ...rest } = prev
       return rest
     })
     setFilterSearchQuery(prev => {
@@ -184,7 +205,11 @@ const PendingOrdersPage = () => {
     const numberFilterKey = `${columnKey}_number`
     const hasNumberFilter = columnFilters[numberFilterKey] ? 1 : 0
     
-    return checkboxCount + hasNumberFilter
+    // Check for text filter
+    const textFilterKey = `${columnKey}_text`
+    const hasTextFilter = columnFilters[textFilterKey] ? 1 : 0
+    
+    return checkboxCount + hasNumberFilter + hasTextFilter
   }
 
   const isAllSelected = (columnKey) => {
@@ -220,6 +245,41 @@ const PendingOrdersPage = () => {
     setCustomFilterType('equal')
   }
 
+  // Apply custom filter (text or number based on column type)
+  const applyCustomFilter = () => {
+    if (!customFilterColumn || !customFilterValue1) return
+
+    if (isStringColumn(customFilterColumn)) {
+      // For time columns, convert datetime-local format to display format
+      let filterValue = customFilterValue1
+      if (['time', 'timeSetup', 'timeUpdate', 'timeCreate'].includes(customFilterColumn)) {
+        filterValue = datetimeLocalToDisplay(customFilterValue1)
+      }
+      
+      const filterConfig = {
+        type: customFilterType,
+        value1: String(filterValue).trim().toLowerCase()
+      }
+
+      setColumnFilters(prev => ({
+        ...prev,
+        [`${customFilterColumn}_text`]: filterConfig
+      }))
+
+      // Close dropdowns/forms
+      setShowFilterDropdown(null)
+      setCustomFilterColumn(null)
+
+      // Reset form
+      setCustomFilterValue1('')
+      setCustomFilterValue2('')
+      setCustomFilterType('equal')
+    } else {
+      // Fallback to existing number filter behavior
+      applyCustomNumberFilter()
+    }
+  }
+
   // Check if value matches number filter
   const matchesNumberFilter = (value, filterConfig) => {
     if (!filterConfig) return true
@@ -248,6 +308,38 @@ const PendingOrdersPage = () => {
         return true
     }
   }
+
+  // Check if value matches text filter
+  const matchesTextFilter = (value, filterConfig, columnKey = null) => {
+    if (!filterConfig) return true
+    
+    // For time columns, format the value before comparison
+    let compareValue = value
+    if (columnKey && ['time', 'timeSetup', 'timeUpdate', 'timeCreate'].includes(columnKey)) {
+      compareValue = formatTime(value)
+    }
+    
+    const str = String(compareValue ?? '').trim().toLowerCase()
+    const q = String(filterConfig.value1 ?? '').trim().toLowerCase()
+    if (!q) return true
+
+    switch (filterConfig.type) {
+      case 'equal':
+        return str === q
+      case 'notEqual':
+        return str !== q
+      case 'startsWith':
+        return str.startsWith(q)
+      case 'endsWith':
+        return str.endsWith(q)
+      case 'contains':
+        return str.includes(q)
+      case 'doesNotContain':
+        return !str.includes(q)
+      default:
+        return true
+    }
+  }
   
   const hasInitialLoad = useRef(false)
   // Transient UI flashes for updated orders
@@ -270,13 +362,6 @@ const PendingOrdersPage = () => {
     }, 1500)
     flashTimeouts.current.set(key, to)
   }
-  
-  // Critical: Set unmounted flag ASAP to unblock route transitions
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false
-    }
-  }, [])
   
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -354,6 +439,39 @@ const PendingOrdersPage = () => {
       return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`
     } catch {
       return '-'
+    }
+  }
+
+  // Convert timestamp to datetime-local format (YYYY-MM-DDTHH:mm)
+  const timestampToDatetimeLocal = (ts) => {
+    if (!ts) return ''
+    try {
+      const d = new Date(ts * 1000)
+      const year = d.getFullYear()
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      const hours = String(d.getHours()).padStart(2, '0')
+      const minutes = String(d.getMinutes()).padStart(2, '0')
+      return `${year}-${month}-${day}T${hours}:${minutes}`
+    } catch {
+      return ''
+    }
+  }
+
+  // Convert datetime-local format to formatted display string
+  const datetimeLocalToDisplay = (dtLocal) => {
+    if (!dtLocal) return ''
+    try {
+      const d = new Date(dtLocal)
+      const day = String(d.getDate()).padStart(2, '0')
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const year = d.getFullYear()
+      const hours = String(d.getHours()).padStart(2, '0')
+      const minutes = String(d.getMinutes()).padStart(2, '0')
+      const seconds = String(d.getSeconds()).padStart(2, '0')
+      return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`
+    } catch {
+      return ''
     }
   }
 
@@ -466,13 +584,20 @@ const PendingOrdersPage = () => {
       // Number filter
       const actualColumnKey = columnKey.replace('_number', '')
       ibFilteredOrders = ibFilteredOrders.filter(order => {
-        const orderValue = order[actualColumnKey]
+        const orderValue = getOrderValue(order, actualColumnKey)
         return matchesNumberFilter(orderValue, values)
+      })
+    } else if (columnKey.endsWith('_text')) {
+      // Text filter
+      const actualColumnKey = columnKey.replace('_text', '')
+      ibFilteredOrders = ibFilteredOrders.filter(order => {
+        const orderValue = getOrderValue(order, actualColumnKey)
+        return matchesTextFilter(orderValue, values, actualColumnKey)
       })
     } else if (values && values.length > 0) {
       // Regular checkbox filter
       ibFilteredOrders = ibFilteredOrders.filter(order => {
-        const orderValue = order[columnKey]
+        const orderValue = getOrderValue(order, columnKey)
         return values.includes(orderValue)
       })
     }
@@ -534,34 +659,16 @@ const PendingOrdersPage = () => {
   // Close filter dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!isMountedRef.current) return
-      
-      // Check if click is inside any filter-related element
-      const isInsideMainFilter = showFilterDropdown && filterRefs.current[showFilterDropdown] && 
-                                  filterRefs.current[showFilterDropdown].contains(event.target)
-      
-      const numberFilterElements = document.querySelectorAll('[data-number-filter]')
-      let isInsideNumberFilter = false
-      numberFilterElements.forEach(el => {
-        if (el.contains(event.target)) {
-          isInsideNumberFilter = true
-        }
-      })
-      
-      // If click is outside both main filter and number filter dropdowns, close them
-      if (!isInsideMainFilter && !isInsideNumberFilter) {
-        if (showFilterDropdown) {
+      if (showFilterDropdown && filterRefs.current[showFilterDropdown]) {
+        if (!filterRefs.current[showFilterDropdown].contains(event.target)) {
           setShowFilterDropdown(null)
-        }
-        if (showNumberFilterDropdown) {
-          setShowNumberFilterDropdown(null)
         }
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showFilterDropdown, showNumberFilterDropdown])
+  }, [showFilterDropdown])
   
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage)
@@ -631,7 +738,7 @@ const PendingOrdersPage = () => {
             </button>
 
             {showFilterDropdown === columnKey && (
-              <div className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64" 
+              <div className="fixed bg-white border border-gray-300 rounded shadow-2xl z-[9999] w-64" 
                 style={{
                   top: '50%',
                   transform: 'translateY(-50%)',
@@ -639,13 +746,12 @@ const PendingOrdersPage = () => {
                     const rect = filterRefs.current[columnKey]?.getBoundingClientRect()
                     if (!rect) return '0px'
                     // Check if dropdown would go off-screen on the right
-                    const dropdownWidth = 256 // w-64 in pixels
-                    const offset = 30 // Offset to the right to keep filter icon visible
-                    const wouldOverflow = rect.left + offset + dropdownWidth > window.innerWidth
+                    const dropdownWidth = 256 // updated width for w-64
+                    const wouldOverflow = rect.left + dropdownWidth > window.innerWidth
                     // If would overflow, align to the right edge of the button
                     return wouldOverflow 
                       ? `${rect.right - dropdownWidth}px`
-                      : `${rect.left + offset}px`
+                      : `${rect.left}px`
                   })()
                 }}
                 onClick={(e) => e.stopPropagation()}
@@ -727,11 +833,10 @@ const PendingOrdersPage = () => {
                         e.stopPropagation()
                         if (showNumberFilterDropdown === columnKey) {
                           setShowNumberFilterDropdown(null)
-                          setCustomFilterValue1('')
-                          setCustomFilterValue2('')
                         } else {
                           setShowNumberFilterDropdown(columnKey)
                           setCustomFilterColumn(columnKey)
+                          setCustomFilterType('equal')
                           setCustomFilterValue1('')
                           setCustomFilterValue2('')
                         }
@@ -749,7 +854,7 @@ const PendingOrdersPage = () => {
                           transform: (() => {
                             const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                             if (!rect) return 'none'
-                            const dropdownWidth = 256
+                            const dropdownWidth = 320
                             const offset = 8
                             const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                             return wouldOverflow ? 'rotate(180deg)' : 'none'
@@ -760,11 +865,11 @@ const PendingOrdersPage = () => {
                       </svg>
                     </button>
 
-                    {/* Custom Filter Form - Appears directly when clicking Number Filters */}
+                    {/* Inline Custom Filter Form - shows directly when button is clicked */}
                     {showNumberFilterDropdown === columnKey && (
                       <div
                         data-number-filter
-                        className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
+                        className="absolute top-0 w-80 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                         style={{
                           left: (() => {
                             const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
@@ -789,11 +894,11 @@ const PendingOrdersPage = () => {
                         <div className="p-3 space-y-3">
                           {/* Operator Dropdown */}
                           <div>
-                            <label className="block text-xs font-normal text-gray-700 mb-1">CONDITION</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">CONDITION</label>
                             <select
                               value={customFilterType}
                               onChange={(e) => setCustomFilterType(e.target.value)}
-                              className="w-full px-2 py-1.5 text-xs font-normal border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                             >
                               <option value="equal">Equal...</option>
                               <option value="notEqual">Not Equal...</option>
@@ -802,53 +907,33 @@ const PendingOrdersPage = () => {
                               <option value="greaterThan">Greater Than...</option>
                               <option value="greaterThanOrEqual">Greater Than Or Equal...</option>
                               <option value="between">Between...</option>
+                              {isStringColumn(columnKey) && (
+                                <>
+                                  <option value="startsWith">Starts With...</option>
+                                  <option value="endsWith">Ends With...</option>
+                                  <option value="contains">Contains...</option>
+                                  <option value="doesNotContain">Does Not Contain...</option>
+                                </>
+                              )}
                             </select>
                           </div>
 
-                          {/* Value Input(s) */}
+                          {/* Value Input */}
                           <div>
-                            <label className="block text-xs font-normal text-gray-700 mb-1">VALUE</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
                             <input
-                              type={columnKey === 'timeSetup' ? 'datetime-local' : 'number'}
-                              step={columnKey === 'timeSetup' ? '1' : 'any'}
-                              placeholder={columnKey === 'timeSetup' ? 'Select date and time' : 'Enter value'}
-                              value={columnKey === 'timeSetup' && customFilterValue1 ? 
-                                (() => {
-                                  // Convert Unix timestamp to datetime-local format (YYYY-MM-DDTHH:mm:ss)
-                                  const timestamp = Number(customFilterValue1)
-                                  if (isNaN(timestamp)) return customFilterValue1
-                                  const date = new Date(timestamp * 1000) // Convert to milliseconds
-                                  const year = date.getFullYear()
-                                  const month = String(date.getMonth() + 1).padStart(2, '0')
-                                  const day = String(date.getDate()).padStart(2, '0')
-                                  const hours = String(date.getHours()).padStart(2, '0')
-                                  const minutes = String(date.getMinutes()).padStart(2, '0')
-                                  const seconds = String(date.getSeconds()).padStart(2, '0')
-                                  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
-                                })() 
-                                : customFilterValue1
-                              }
-                              onChange={(e) => {
-                                if (columnKey === 'timeSetup') {
-                                  // Convert datetime-local to Unix timestamp
-                                  const dateValue = e.target.value
-                                  if (dateValue) {
-                                    const timestamp = Math.floor(new Date(dateValue).getTime() / 1000)
-                                    setCustomFilterValue1(String(timestamp))
-                                  } else {
-                                    setCustomFilterValue1('')
-                                  }
-                                } else {
-                                  setCustomFilterValue1(e.target.value)
-                                }
-                              }}
+                              type={isStringColumn(columnKey) || ['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(customFilterType) ? 'text' : 'number'}
+                              step="any"
+                              placeholder="Enter value"
+                              value={customFilterValue1}
+                              onChange={(e) => setCustomFilterValue1(e.target.value)}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                   e.preventDefault()
                                   if (customFilterType === 'between' && !customFilterValue2) return
-                                  applyCustomNumberFilter()
+                                  applyCustomFilter()
                                   setShowNumberFilterDropdown(null)
-                                  setShowCustomFilterModal(false)
+                                  setShowFilterDropdown(null)
                                 }
                               }}
                               className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
@@ -859,48 +944,19 @@ const PendingOrdersPage = () => {
                           {/* Second Value for Between */}
                           {customFilterType === 'between' && (
                             <div>
-                              <label className="block text-xs font-normal text-gray-700 mb-1">AND</label>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">AND</label>
                               <input
-                                type={columnKey === 'timeSetup' ? 'datetime-local' : 'number'}
-                                step={columnKey === 'timeSetup' ? '1' : 'any'}
-                                placeholder={columnKey === 'timeSetup' ? 'Select date and time' : 'Enter value'}
-                                value={columnKey === 'timeSetup' && customFilterValue2 ? 
-                                  (() => {
-                                    // Convert Unix timestamp to datetime-local format (YYYY-MM-DDTHH:mm:ss)
-                                    const timestamp = Number(customFilterValue2)
-                                    if (isNaN(timestamp)) return customFilterValue2
-                                    const date = new Date(timestamp * 1000) // Convert to milliseconds
-                                    const year = date.getFullYear()
-                                    const month = String(date.getMonth() + 1).padStart(2, '0')
-                                    const day = String(date.getDate()).padStart(2, '0')
-                                    const hours = String(date.getHours()).padStart(2, '0')
-                                    const minutes = String(date.getMinutes()).padStart(2, '0')
-                                    const seconds = String(date.getSeconds()).padStart(2, '0')
-                                    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
-                                  })() 
-                                  : customFilterValue2
-                                }
-                                onChange={(e) => {
-                                  if (columnKey === 'timeSetup') {
-                                    // Convert datetime-local to Unix timestamp
-                                    const dateValue = e.target.value
-                                    if (dateValue) {
-                                      const timestamp = Math.floor(new Date(dateValue).getTime() / 1000)
-                                      setCustomFilterValue2(String(timestamp))
-                                    } else {
-                                      setCustomFilterValue2('')
-                                    }
-                                  } else {
-                                    setCustomFilterValue2(e.target.value)
-                                  }
-                                }}
+                                type={isStringColumn(columnKey) ? 'text' : 'number'}
+                                step="any"
+                                placeholder="Enter value"
+                                value={customFilterValue2}
+                                onChange={(e) => setCustomFilterValue2(e.target.value)}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
                                     e.preventDefault()
-                                    if (!customFilterValue1 || !customFilterValue2) return
-                                    applyCustomNumberFilter()
+                                    applyCustomFilter()
                                     setShowNumberFilterDropdown(null)
-                                    setShowCustomFilterModal(false)
+                                    setShowFilterDropdown(null)
                                   }
                                 }}
                                 className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
@@ -909,16 +965,18 @@ const PendingOrdersPage = () => {
                             </div>
                           )}
 
-                          {/* Apply Button */}
-                          <div className="flex gap-2 pt-2 border-t border-gray-200">
+                          {/* Action Button */}
+                          <div className="pt-2">
                             <button
                               onClick={() => {
-                                applyCustomNumberFilter()
-                                setShowNumberFilterDropdown(null)
-                                setShowCustomFilterModal(false)
+                                applyCustomFilter()
+                                Promise.resolve().then(() => {
+                                  setShowNumberFilterDropdown(null)
+                                  setShowFilterDropdown(null)
+                                })
                               }}
                               disabled={!customFilterValue1 || (customFilterType === 'between' && !customFilterValue2)}
-                              className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                              className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                             >
                               OK
                             </button>
@@ -941,13 +999,11 @@ const PendingOrdersPage = () => {
                         }}
                         onClick={(e) => {
                           e.stopPropagation()
-                          if (showNumberFilterDropdown === columnKey) {
-                            setShowNumberFilterDropdown(null)
-                            setCustomFilterValue1('')
-                            setCustomFilterValue2('')
+                          if (customFilterColumn === columnKey) {
+                            setCustomFilterColumn(null)
                           } else {
-                            setShowNumberFilterDropdown(columnKey)
                             setCustomFilterColumn(columnKey)
+                            setCustomFilterType('equal')
                             setCustomFilterValue1('')
                             setCustomFilterValue2('')
                           }
@@ -965,7 +1021,7 @@ const PendingOrdersPage = () => {
                             transform: (() => {
                               const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'none'
-                              const dropdownWidth = 256
+                              const dropdownWidth = 320
                               const offset = 8
                               const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                               return wouldOverflow ? 'rotate(180deg)' : 'none'
@@ -976,16 +1032,16 @@ const PendingOrdersPage = () => {
                         </svg>
                       </button>
 
-                      {/* Text Filter Form - Appears directly when clicking Text Filters */}
-                      {showNumberFilterDropdown === columnKey && (
+                      {/* Inline Text Filter Form - shows directly when button is clicked */}
+                      {customFilterColumn === columnKey && (
                         <div
                           data-number-filter
-                          className="absolute top-0 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
+                          className="absolute top-0 w-80 bg-white border-2 border-gray-300 rounded-lg shadow-xl"
                           style={{
                             left: (() => {
                               const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'calc(100% + 8px)'
-                              const dropdownWidth = 256
+                              const dropdownWidth = 320
                               const offset = 8
                               const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                               return wouldOverflow ? 'auto' : 'calc(100% + 8px)'
@@ -993,7 +1049,7 @@ const PendingOrdersPage = () => {
                             right: (() => {
                               const rect = numberFilterButtonRefs.current?.[columnKey]?.getBoundingClientRect()
                               if (!rect) return 'auto'
-                              const dropdownWidth = 256
+                              const dropdownWidth = 320
                               const offset = 8
                               const wouldOverflow = rect.right + offset + dropdownWidth > window.innerWidth
                               return wouldOverflow ? 'calc(100% + 8px)' : 'auto'
@@ -1005,11 +1061,11 @@ const PendingOrdersPage = () => {
                           <div className="p-3 space-y-3">
                             {/* Operator Dropdown */}
                             <div>
-                              <label className="block text-xs font-normal text-gray-700 mb-1">CONDITION</label>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">CONDITION</label>
                               <select
                                 value={customFilterType}
                                 onChange={(e) => setCustomFilterType(e.target.value)}
-                                className="w-full px-2 py-1.5 text-xs font-normal border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
+                                className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
                               >
                                 <option value="equal">Equal...</option>
                                 <option value="notEqual">Not Equal...</option>
@@ -1022,18 +1078,22 @@ const PendingOrdersPage = () => {
 
                             {/* Value Input */}
                             <div>
-                              <label className="block text-xs font-normal text-gray-700 mb-1">VALUE</label>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">VALUE</label>
                               <input
-                                type="text"
-                                placeholder="Enter value"
+                                type={['time', 'timeSetup', 'timeUpdate', 'timeCreate'].includes(columnKey) ? 'datetime-local' : 'text'}
+                                step={['time', 'timeSetup', 'timeUpdate', 'timeCreate'].includes(columnKey) ? '1' : undefined}
+                                placeholder={['time', 'timeSetup', 'timeUpdate', 'timeCreate'].includes(columnKey) ? '' : 'Enter value'}
                                 value={customFilterValue1}
-                                onChange={(e) => setCustomFilterValue1(e.target.value)}
+                                onChange={(e) => {
+                                  // Store the value as-is (datetime-local format or text)
+                                  setCustomFilterValue1(e.target.value)
+                                }}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
                                     e.preventDefault()
-                                    applyCustomNumberFilter()
-                                    setShowNumberFilterDropdown(null)
-                                    setShowCustomFilterModal(false)
+                                    applyCustomFilter()
+                                    setCustomFilterColumn(null)
+                                    setShowFilterDropdown(null)
                                   }
                                 }}
                                 className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
@@ -1041,16 +1101,18 @@ const PendingOrdersPage = () => {
                               />
                             </div>
 
-                            {/* Apply Button */}
-                            <div className="flex gap-2 pt-2 border-t border-gray-200">
+                            {/* Action Button */}
+                            <div className="pt-2">
                               <button
                                 onClick={() => {
-                                  applyCustomNumberFilter()
-                                  setShowNumberFilterDropdown(null)
-                                  setShowCustomFilterModal(false)
+                                  applyCustomFilter()
+                                  Promise.resolve().then(() => {
+                                    setCustomFilterColumn(null)
+                                    setShowFilterDropdown(null)
+                                  })
                                 }}
                                 disabled={!customFilterValue1}
-                                className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                               >
                                 OK
                               </button>
@@ -1107,7 +1169,7 @@ const PendingOrdersPage = () => {
                 </div>
 
                 {/* Filter List */}
-                <div className="max-h-64 overflow-y-auto">
+                <div className="max-h-40 overflow-y-auto">
                   <div className="p-2 space-y-1">
                     {getUniqueColumnValues(columnKey).length === 0 ? (
                       <div className="px-3 py-2 text-center text-[11px] text-slate-500">
@@ -1131,21 +1193,7 @@ const PendingOrdersPage = () => {
                             className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
                           />
                           <span className="text-[11px] text-slate-700 truncate">
-                            {columnKey === 'timeSetup' && !isNaN(Number(value)) 
-                              ? (() => {
-                                  const date = new Date(Number(value) * 1000)
-                                  return date.toLocaleString('en-US', {
-                                    year: 'numeric',
-                                    month: '2-digit',
-                                    day: '2-digit',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    second: '2-digit',
-                                    hour12: false
-                                  })
-                                })()
-                              : value
-                            }
+                            {['time', 'timeSetup', 'timeUpdate', 'timeCreate'].includes(columnKey) ? formatTime(value) : value}
                           </span>
                         </label>
                       ))
@@ -1154,11 +1202,11 @@ const PendingOrdersPage = () => {
                 </div>
 
                 {/* Footer */}
-                <div className="px-3 py-2 border-t border-slate-200 bg-slate-50 rounded-b flex items-center gap-2">
+                <div className="px-3 py-2 border-t border-slate-200 bg-slate-50 rounded-b flex items-center justify-end gap-2">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      setShowFilterDropdown(null)
+                      clearColumnFilter(columnKey)
                     }}
                     className="flex-1 px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md transition-colors"
                   >
@@ -1197,7 +1245,10 @@ const PendingOrdersPage = () => {
     return <PendingOrdersModule />
   }
 
-  if (loading.orders) return <LoadingSpinner />
+  // Top header loader synced with orders fetch lifecycle
+  useEffect(() => {
+    setProgressActive(!!loading?.orders)
+  }, [loading?.orders])
 
   return (
     <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
@@ -1208,6 +1259,16 @@ const PendingOrdersPage = () => {
       />
 
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
+        {/* YouTube-style Loading Bar */}
+        {progressActive && (
+          <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
+            <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg" style={{
+              width: '40%',
+              animation: 'loading 1.5s ease-in-out infinite',
+              transformOrigin: 'left center'
+            }}></div>
+          </div>
+        )}
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
           {/* Header Section */}
           <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
@@ -1601,126 +1662,6 @@ const PendingOrdersPage = () => {
       />
 
       {/* Custom Filter Modal */}
-      {showCustomFilterModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000]">
-          <div className="bg-white rounded-lg shadow-xl w-96 max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Custom Filter</h3>
-              <button
-                onClick={() => {
-                  setShowCustomFilterModal(false)
-                  setCustomFilterValue1('')
-                  setCustomFilterValue2('')
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="p-4 space-y-4">
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">Show rows where:</p>
-                <p className="text-sm text-gray-600 mb-3">{customFilterColumn}</p>
-              </div>
-
-              {/* Filter Type Dropdown */}
-              <div>
-                <select
-                  value={customFilterType}
-                  onChange={(e) => setCustomFilterType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
-                >
-                  <option value="equal">Equal</option>
-                  <option value="notEqual">Not Equal</option>
-                  <option value="lessThan">Less Than</option>
-                  <option value="lessThanOrEqual">Less Than Or Equal</option>
-                  <option value="greaterThan">Greater Than</option>
-                  <option value="greaterThanOrEqual">Greater Than Or Equal</option>
-                  <option value="between">Between</option>
-                  <option value="startsWith">Starts With</option>
-                  <option value="endsWith">Ends With</option>
-                  <option value="contains">Contains</option>
-                  <option value="doesNotContain">Does Not Contain</option>
-                </select>
-              </div>
-
-              {/* Value Input */}
-              <div>
-                <input
-                  type={['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(customFilterType) ? 'text' : 'number'}
-                  value={customFilterValue1}
-                  onChange={(e) => setCustomFilterValue1(e.target.value)}
-                  placeholder="Enter the value"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
-                />
-              </div>
-
-              {/* Second Value for Between */}
-              {customFilterType === 'between' && (
-                <>
-                  <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        checked={customFilterOperator === 'AND'}
-                        onChange={() => setCustomFilterOperator('AND')}
-                        className="text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700">AND</span>
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        checked={customFilterOperator === 'OR'}
-                        onChange={() => setCustomFilterOperator('OR')}
-                        className="text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700">OR</span>
-                    </label>
-                  </div>
-
-                  <div>
-                    <input
-                      type="number"
-                      value={customFilterValue2}
-                      onChange={(e) => setCustomFilterValue2(e.target.value)}
-                      placeholder="Enter the value"
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-end gap-2">
-              <button
-                onClick={() => {
-                  setShowCustomFilterModal(false)
-                  setCustomFilterValue1('')
-                  setCustomFilterValue2('')
-                }}
-                className="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={applyCustomNumberFilter}
-                disabled={!customFilterValue1}
-                className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                OK
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Client Positions Modal */}
       {selectedLogin && (
         <ClientPositionsModal

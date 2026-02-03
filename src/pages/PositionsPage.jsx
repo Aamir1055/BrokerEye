@@ -146,6 +146,7 @@ const PositionsPage = () => {
   const displayButtonRef = useRef(null)
   const [displayMode, setDisplayMode] = useState('value') // 'value', 'percentage', or 'both'
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [progressActive, setProgressActive] = useState(false)
   const [visibleColumns, setVisibleColumns] = useState({
     position: false,
     time: true,
@@ -247,6 +248,7 @@ const PositionsPage = () => {
   const [columnFilters, setColumnFilters] = useState({})
   const [showFilterDropdown, setShowFilterDropdown] = useState(null)
   const filterRefs = useRef({})
+  const filterDropdownRefs = useRef({})
   const numberFilterButtonRefs = useRef({})
   const [filterSearchQuery, setFilterSearchQuery] = useState({})
   const [showNumberFilterDropdown, setShowNumberFilterDropdown] = useState(null)
@@ -420,7 +422,12 @@ const PositionsPage = () => {
   const applyCustomNumberFilter = () => {
     if (!customFilterColumn || !customFilterValue1) return
 
-    const isTextFilter = ['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(customFilterType)
+    // Treat filters as text-based for string columns (e.g., symbol, action, reason, comment)
+    // and for explicit text operators regardless of column type.
+    const textOperators = ['equal', 'notEqual', 'startsWith', 'endsWith', 'contains', 'doesNotContain']
+    const isTextColumn = isStringColumn(customFilterColumn)
+    const isExplicitTextOp = ['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(customFilterType)
+    const isTextFilter = isTextColumn && textOperators.includes(customFilterType) || isExplicitTextOp
     
     const filterConfig = {
       type: customFilterType,
@@ -451,12 +458,16 @@ const PositionsPage = () => {
     
     const { type, value1, value2 } = filterConfig
 
-    // Handle text filters
-    if (['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(type)) {
+    // Handle text filters (including equal/notEqual for text comparison)
+    if (['equal', 'notEqual', 'startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(type)) {
       const strValue = String(value || '').toLowerCase()
       const searchValue = String(value1 || '').toLowerCase()
       
       switch (type) {
+        case 'equal':
+          return strValue === searchValue
+        case 'notEqual':
+          return strValue !== searchValue
         case 'startsWith':
           return strValue.startsWith(searchValue)
         case 'endsWith':
@@ -470,25 +481,23 @@ const PositionsPage = () => {
       }
     }
 
-    // Handle number filters
+    // Handle number filters only (lessThan, greaterThan, between, etc.)
     const numValue = parseFloat(value)
-    if (isNaN(numValue)) return false
+    const numValue1 = parseFloat(value1)
+    if (isNaN(numValue) || isNaN(numValue1)) return false
 
     switch (type) {
-      case 'equal':
-        return numValue === value1
-      case 'notEqual':
-        return numValue !== value1
       case 'lessThan':
-        return numValue < value1
+        return numValue < numValue1
       case 'lessThanOrEqual':
-        return numValue <= value1
+        return numValue <= numValue1
       case 'greaterThan':
-        return numValue > value1
+        return numValue > numValue1
       case 'greaterThanOrEqual':
-        return numValue >= value1
+        return numValue >= numValue1
       case 'between':
-        return value2 !== null && numValue >= value1 && numValue <= value2
+        const numValue2 = parseFloat(value2)
+        return !isNaN(numValue2) && numValue >= numValue1 && numValue <= numValue2
       default:
         return true
     }
@@ -1167,8 +1176,14 @@ const PositionsPage = () => {
       if (!isMountedRef.current) return
       
       // Check if clicking outside main filter dropdown
-      if (showFilterDropdown && filterRefs.current[showFilterDropdown]) {
-        if (!filterRefs.current[showFilterDropdown].contains(event.target)) {
+      if (showFilterDropdown) {
+        const filterButton = filterRefs.current[showFilterDropdown]
+        const filterDropdown = filterDropdownRefs.current[showFilterDropdown]
+        
+        const clickedInButton = filterButton && filterButton.contains(event.target)
+        const clickedInDropdown = filterDropdown && filterDropdown.contains(event.target)
+        
+        if (!clickedInButton && !clickedInDropdown) {
           setShowFilterDropdown(null)
           setShowNumberFilterDropdown(null)
         }
@@ -1714,7 +1729,12 @@ const PositionsPage = () => {
             </button>
 
             {showFilterDropdown === columnKey && (
-              <div className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64" 
+              <div 
+                ref={el => {
+                  if (!filterDropdownRefs.current) filterDropdownRefs.current = {}
+                  filterDropdownRefs.current[columnKey] = el
+                }}
+                className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64" 
                 style={{
                   top: '50%',
                   transform: 'translateY(-50%)',
@@ -2286,6 +2306,11 @@ const PositionsPage = () => {
   // Only show local loading inside cards/tables; keep the page chrome interactive
   const isInitialPositionsLoading = loading.positions && (!cachedPositions || cachedPositions.length === 0)
 
+  // Sync top header loader with any positions fetch and manual refreshes
+  useEffect(() => {
+    setProgressActive(!!loading?.positions || isRefreshing)
+  }, [loading?.positions, isRefreshing])
+
   // Early return for mobile - render mobile component
   if (isMobile) {
     return (
@@ -2304,6 +2329,16 @@ const PositionsPage = () => {
       />
 
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden bg-[#F8FAFC]`}>
+        {/* YouTube-style Loading Bar */}
+        {progressActive && (
+          <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
+            <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg" style={{
+              width: '40%',
+              animation: 'loading 1.5s ease-in-out infinite',
+              transformOrigin: 'left center'
+            }}></div>
+          </div>
+        )}
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
           {/* Header Section */}
           <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
@@ -3092,30 +3127,7 @@ const PositionsPage = () => {
                         </tr>
                       </thead>
 
-                      {/* YouTube-style Loading Progress Bar */}
-                      {isInitialPositionsLoading && (
-                        <thead className="sticky z-40" style={{ top: '48px' }}>
-                          <tr>
-                            <th colSpan={Object.values(netVisibleColumns).filter(v => v).length} className="p-0" style={{ height: '3px' }}>
-                              <div className="relative w-full h-full bg-gray-200 overflow-hidden">
-                                <style>{`
-                                  @keyframes shimmerSlide {
-                                    0% { transform: translateX(-100%); }
-                                    100% { transform: translateX(400%); }
-                                  }
-                                  .shimmer-loading-bar {
-                                    width: 30%;
-                                    height: 100%;
-                                    background: #2563eb;
-                                    animation: shimmerSlide 0.9s linear infinite;
-                                  }
-                                `}</style>
-                                <div className="shimmer-loading-bar absolute top-0 left-0 h-full" />
-                              </div>
-                            </th>
-                          </tr>
-                        </thead>
-                      )}
+                      {/* Top header loader replaces inline shimmer */}
 
                       <tbody className="bg-white divide-y divide-gray-100 text-sm">
                         {netDisplayedPositions.map((netPos, idx) => (
@@ -3548,30 +3560,7 @@ const PositionsPage = () => {
                         </tr>
                       </thead>
 
-                      {/* YouTube-style Loading Progress Bar */}
-                      {isInitialPositionsLoading && (
-                        <thead className="sticky z-40" style={{ top: '48px' }}>
-                          <tr>
-                            <th colSpan={Object.values(clientNetVisibleColumns).filter(v => v).length} className="p-0" style={{ height: '3px' }}>
-                              <div className="relative w-full h-full bg-gray-200 overflow-hidden">
-                                <style>{`
-                                  @keyframes shimmerSlideClient {
-                                    0% { transform: translateX(-100%); }
-                                    100% { transform: translateX(400%); }
-                                  }
-                                  .shimmer-loading-bar-client {
-                                    width: 30%;
-                                    height: 100%;
-                                    background: #2563eb;
-                                    animation: shimmerSlideClient 0.9s linear infinite;
-                                  }
-                                `}</style>
-                                <div className="shimmer-loading-bar-client absolute top-0 left-0 h-full" />
-                              </div>
-                            </th>
-                          </tr>
-                        </thead>
-                      )}
+                      {/* Top header loader replaces inline shimmer */}
 
                       <tbody className="bg-white divide-y divide-gray-100 text-sm">
                         {clientNetDisplayedPositions.map((row, idx) => {
@@ -3851,30 +3840,7 @@ const PositionsPage = () => {
                     </tr>
                   </thead>
 
-                  {/* YouTube-style Loading Progress Bar */}
-                  {isInitialPositionsLoading && (
-                    <thead className="sticky z-40" style={{ top: '48px' }}>
-                      <tr>
-                        <th colSpan={Object.values(getEffectiveVisibleColumns()).filter(v => v).length} className="p-0" style={{ height: '3px' }}>
-                          <div className="relative w-full h-full bg-gray-200 overflow-hidden">
-                            <style>{`
-                              @keyframes shimmerSlidePos {
-                                0% { transform: translateX(-100%); }
-                                100% { transform: translateX(400%); }
-                              }
-                              .shimmer-loading-bar-pos {
-                                width: 30%;
-                                height: 100%;
-                                background: #2563eb;
-                                animation: shimmerSlidePos 0.9s linear infinite;
-                              }
-                            `}</style>
-                            <div className="shimmer-loading-bar-pos absolute top-0 left-0 h-full" />
-                          </div>
-                        </th>
-                      </tr>
-                    </thead>
-                  )}
+                  {/* Top header loader replaces inline shimmer */}
 
                   <tbody className="bg-white divide-y divide-gray-100">
                     {displayedPositions.length === 0 && !isInitialPositionsLoading ? (

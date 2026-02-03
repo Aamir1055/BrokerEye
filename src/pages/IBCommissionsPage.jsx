@@ -46,6 +46,7 @@ const IBCommissionsPage = () => {
   const [showBulkUpdateModal, setShowBulkUpdateModal] = useState(false)
   const { isAuthenticated } = useAuth()
   const [unauthorized, setUnauthorized] = useState(false)
+  const [progressActive, setProgressActive] = useState(false)
   
   // Column filter states
   const [columnFilters, setColumnFilters] = useState({})
@@ -299,176 +300,6 @@ const IBCommissionsPage = () => {
     return `${day}/${month}/${year}`
   }
 
-  // Column filter helper functions
-  const getUniqueColumnValues = (columnKey) => {
-    const values = new Set()
-    commissions.forEach(commission => {
-      let value = commission[columnKey]
-      if (value !== null && value !== undefined && value !== '') {
-        // Format date for created_at/updated_at columns
-        if ((columnKey === 'created_at' || columnKey === 'updated_at') && value) {
-          value = formatDate(value)
-        }
-        values.add(value)
-      }
-    })
-    const sortedValues = Array.from(values).sort((a, b) => {
-      if (typeof a === 'number' && typeof b === 'number') {
-        return a - b
-      }
-      return String(a).localeCompare(String(b))
-    })
-    
-    // Filter by search query if exists
-    const searchQuery = filterSearchQuery[columnKey]?.toLowerCase() || ''
-    if (searchQuery) {
-      return sortedValues.filter(value => 
-        String(value).toLowerCase().includes(searchQuery)
-      )
-    }
-    
-    return sortedValues
-  }
-
-  const toggleColumnFilter = (columnKey, value) => {
-    setColumnFilters(prev => {
-      const currentFilters = prev[columnKey] || []
-      const newFilters = currentFilters.includes(value)
-        ? currentFilters.filter(v => v !== value)
-        : [...currentFilters, value]
-      
-      if (newFilters.length === 0) {
-        const { [columnKey]: _, ...rest } = prev
-        return rest
-      }
-      
-      return { ...prev, [columnKey]: newFilters }
-    })
-  }
-
-  const clearColumnFilter = (columnKey) => {
-    setColumnFilters(prev => {
-      const numberFilterKey = `${columnKey}_number`
-      const { [columnKey]: _, [numberFilterKey]: __, ...rest } = prev
-      return rest
-    })
-    setFilterSearchQuery(prev => {
-      const { [columnKey]: _, ...rest } = prev
-      return rest
-    })
-    setShowFilterDropdown(null)
-  }
-
-  const selectAllFilters = (columnKey) => {
-    const allValues = getUniqueColumnValues(columnKey)
-    setColumnFilters(prev => ({
-      ...prev,
-      [columnKey]: allValues
-    }))
-  }
-
-  const deselectAllFilters = (columnKey) => {
-    setColumnFilters(prev => {
-      const { [columnKey]: _, ...rest } = prev
-      return rest
-    })
-  }
-
-  const getActiveFilterCount = (columnKey) => {
-    // Check for regular checkbox filters
-    const checkboxCount = columnFilters[columnKey]?.length || 0
-    
-    // Check for number filter
-    const numberFilterKey = `${columnKey}_number`
-    const hasNumberFilter = columnFilters[numberFilterKey] ? 1 : 0
-    
-    return checkboxCount + hasNumberFilter
-  }
-
-  const isAllSelected = (columnKey) => {
-    const allValues = getUniqueColumnValues(columnKey)
-    const selectedValues = columnFilters[columnKey] || []
-    return allValues.length > 0 && selectedValues.length === allValues.length
-  }
-
-  // Apply custom number filter
-  const applyCustomNumberFilter = () => {
-    if (!customFilterColumn || !customFilterValue1) return
-
-    const isTextColumn = isStringColumn(customFilterColumn)
-    const filterConfig = {
-      type: customFilterType,
-      value1: isTextColumn ? customFilterValue1 : parseFloat(customFilterValue1),
-      value2: customFilterValue2 ? (isTextColumn ? customFilterValue2 : parseFloat(customFilterValue2)) : null
-    }
-
-    const filterKey = isTextColumn ? `${customFilterColumn}_text` : `${customFilterColumn}_number`
-    setColumnFilters(prev => ({
-      ...prev,
-      [filterKey]: filterConfig
-    }))
-
-    // Reset form
-    setCustomFilterValue1('')
-    setCustomFilterValue2('')
-    setCustomFilterType('equal')
-  }
-
-  // Check if value matches number filter
-  const matchesNumberFilter = (value, filterConfig) => {
-    if (!filterConfig) return true
-    
-    const numValue = parseFloat(value)
-    if (isNaN(numValue)) return false
-
-    const { type, value1, value2 } = filterConfig
-
-    switch (type) {
-      case 'equal':
-        return numValue === value1
-      case 'notEqual':
-        return numValue !== value1
-      case 'lessThan':
-        return numValue < value1
-      case 'lessThanOrEqual':
-        return numValue <= value1
-      case 'greaterThan':
-        return numValue > value1
-      case 'greaterThanOrEqual':
-        return numValue >= value1
-      case 'between':
-        return value2 !== null && numValue >= value1 && numValue <= value2
-      default:
-        return true
-    }
-  }
-
-  // Check if value matches text filter
-  const matchesTextFilter = (value, filterConfig) => {
-    if (!filterConfig) return true
-    
-    const strValue = String(value || '').toLowerCase()
-    const { type, value1 } = filterConfig
-    const searchValue = String(value1 || '').toLowerCase()
-
-    switch (type) {
-      case 'equal':
-        return strValue === searchValue
-      case 'notEqual':
-        return strValue !== searchValue
-      case 'startsWith':
-        return strValue.startsWith(searchValue)
-      case 'endsWith':
-        return strValue.endsWith(searchValue)
-      case 'contains':
-        return strValue.includes(searchValue)
-      case 'doesNotContain':
-        return !strValue.includes(searchValue)
-      default:
-        return true
-    }
-  }
-
   // Handle column sorting - triggers API call via useEffect
   const handleSort = (columnKey) => {
     if (sortColumn === columnKey) {
@@ -564,6 +395,11 @@ const IBCommissionsPage = () => {
     return <IBCommissionsModule />
   }
 
+  // Sync top header loader with commissions list and totals fetch lifecycle
+  useEffect(() => {
+    setProgressActive(!!loading || !!totalsLoading)
+  }, [loading, totalsLoading])
+
   return (
     <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
       <Sidebar
@@ -573,6 +409,16 @@ const IBCommissionsPage = () => {
       />
       
       <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
+        {/* YouTube-style Loading Bar */}
+        {progressActive && (
+          <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-[9999]" style={{ marginLeft: sidebarOpen ? '15rem' : '4rem' }}>
+            <div className="h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 animate-[loading_1.5s_ease-in-out_infinite] shadow-lg" style={{
+              width: '40%',
+              animation: 'loading 1.5s ease-in-out infinite',
+              transformOrigin: 'left center'
+            }}></div>
+          </div>
+        )}
         <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
           {/* Header Section */}
           <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
@@ -862,30 +708,7 @@ const IBCommissionsPage = () => {
                       {/* Filter Panel removed */}
                     </thead>
 
-                    {/* YouTube-style Loading Progress Bar */}
-                    {loading && (
-                      <thead className="sticky z-40" style={{ top: '48px' }}>
-                        <tr>
-                          <th colSpan="8" className="p-0" style={{ height: '3px' }}>
-                            <div className="relative w-full h-full bg-gray-200 overflow-hidden">
-                              <style>{`
-                                @keyframes shimmerSlideIB {
-                                  0% { transform: translateX(-100%); }
-                                  100% { transform: translateX(400%); }
-                                }
-                                .shimmer-loading-bar-ib {
-                                  width: 30%;
-                                  height: 100%;
-                                  background: #2563eb;
-                                  animation: shimmerSlideIB 0.9s linear infinite;
-                                }
-                              `}</style>
-                              <div className="shimmer-loading-bar-ib absolute top-0 left-0 h-full" />
-                            </div>
-                          </th>
-                        </tr>
-                      </thead>
-                    )}
+                    {/* Inline table shimmer removed in favor of global header loader */}
 
                     <tbody className="bg-white divide-y divide-gray-100 text-sm">
                       {loading ? (

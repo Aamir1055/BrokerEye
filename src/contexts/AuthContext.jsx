@@ -40,7 +40,6 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      setLoading(true)
       setAuthError(null)
       const response = await authAPI.login(username, password)
       
@@ -90,8 +89,6 @@ export const AuthProvider = ({ children }) => {
         success: false, 
         error: errorMessage 
       }
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -160,7 +157,11 @@ export const AuthProvider = ({ children }) => {
       // Navigate to login explicitly so user is redirected immediately
       try { window.dispatchEvent(new CustomEvent('auth:logout')) } catch {}
       if (typeof window !== 'undefined') {
-        window.location.href = 'https://api.brokereye.work.gd/amari-capital/login'
+        // Compute current base path (supports sub-folder deployments)
+        const path = window.location.pathname || '/'
+        const match = path.match(/^\/(amari-capital|broker-branch|broker)\b/)
+        const base = match ? `/${match[1]}` : ''
+        window.location.href = `${base}/login`
       }
     }
   }

@@ -191,12 +191,27 @@ const SettingsPage = () => {
             onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
           />
         )}
-        <main className={`flex-1 p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
-          <div className="max-w-4xl mx-auto">
-            {/* Shimmer Loading Cards */}
-            <div className="mb-5">
-              <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
-              <div className="h-4 w-64 bg-gray-100 rounded animate-pulse"></div>
+        <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
+          <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
+            {/* Actual Header - Always Visible */}
+            <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
+              <div className="mb-1.5 pb-1.5 flex items-center justify-between gap-3">
+                <div>
+                  <h1 className="text-xl font-bold text-[#1A1A1A]">Settings</h1>
+                  <p className="text-xs text-[#6B7280] mt-0.5">Manage your account security</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => navigate('/dashboard')}
+                    className="flex items-center text-gray-600 hover:text-gray-900 transition-colors text-sm px-3 py-1.5 rounded-lg hover:bg-gray-50"
+                  >
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back
+                  </button>
+                </div>
+              </div>
             </div>
             
             {/* Account Info Skeleton */}
@@ -236,34 +251,27 @@ const SettingsPage = () => {
       )}
       
       {/* Main Content */}
-      <main className={`flex-1 p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
-        <div className="max-w-4xl mx-auto">
+      <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} flex flex-col overflow-hidden`}>
+        <div className="max-w-full mx-auto w-full flex flex-col flex-1 overflow-hidden">
           {/* Header Section */}
-          <div className="mb-5">
-            <div className="flex items-center justify-between mb-3">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="flex items-center text-gray-600 hover:text-gray-900 transition-colors text-sm"
-              >
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                Back
-              </button>
-              {/* Hide sidebar toggle on mobile for settings page */}
-              {false && (
+          <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
+            <div className="mb-1.5 pb-1.5 flex items-center justify-between gap-3">
+              <div>
+                <h1 className="text-xl font-bold text-[#1A1A1A]">Settings</h1>
+                <p className="text-xs text-[#6B7280] mt-0.5">Manage your account security</p>
+              </div>
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className="lg:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-white"
+                  onClick={() => navigate('/dashboard')}
+                  className="flex items-center text-gray-600 hover:text-gray-900 transition-colors text-sm px-3 py-1.5 rounded-lg hover:bg-gray-50"
                 >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
+                  Back
                 </button>
-              )}
+              </div>
             </div>
-            <h1 className="text-xl font-semibold text-gray-900">Settings</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Manage your account security</p>
           </div>
 
             {/* Alert Messages */}

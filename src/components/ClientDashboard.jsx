@@ -134,7 +134,7 @@ const ClientDashboard = ({ totals, clients, totalClients, rebateTotals }) => {
 
   const [selectedCardKeys, setSelectedCardKeys] = useState(getInitialSelectedCards)
   const [showCardSelector, setShowCardSelector] = useState(false)
-  const [performanceTab, setPerformanceTab] = useState('daily') // daily, week, month, lifetime
+  const [performanceTab, setPerformanceTab] = useState('lifetime') // daily, week, month, lifetime
   const [cardSearchQuery, setCardSearchQuery] = useState('')
   
   // Save selected cards to localStorage
@@ -414,10 +414,10 @@ const ClientDashboard = ({ totals, clients, totalClients, rebateTotals }) => {
           </div>
           <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
             {[
+              { label: 'Lifetime', icon: MdHistory },
               { label: 'Daily', icon: FiClock },
               { label: 'Week', icon: FiCalendar },
-              { label: 'Month', icon: MdTimeline },
-              { label: 'Lifetime', icon: MdHistory }
+              { label: 'Month', icon: MdTimeline }
             ].map(tab => (
               <button
                 key={tab.label}

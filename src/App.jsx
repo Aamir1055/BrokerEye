@@ -17,7 +17,8 @@ const MarginLevelPage = lazy(() => import('./pages/MarginLevelPage'))
 const LiveDealingPage = lazy(() => import('./pages/LiveDealingPage'))
 const ClientPercentagePage = lazy(() => import('./pages/ClientPercentagePage'))
 const IBCommissionsPage = lazy(() => import('./pages/IBCommissionsPage'))
-const BrokerRulePage = lazy(() => import('./pages/BrokerRulePage'))
+// Broker Rules removed for amari-capital branch
+// const BrokerRulePage = lazy(() => import('./pages/BrokerRulePage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const GraphicalAnalyticsPage = lazy(() => import('./pages/GraphicalAnalyticsPage'))
 const ClientDashboardDesignCPage = lazy(() => import('./pages/ClientDashboardDesignC'))
@@ -71,7 +72,7 @@ const AppContent = () => {
         <Route path="/live-dealing" element={<LiveDealingPage />} />
         <Route path="/client-percentage" element={<ClientPercentagePage />} />
         <Route path="/ib-commissions" element={<IBCommissionsPage />} />
-        <Route path="/broker-rules" element={<BrokerRulePage />} />
+        {/** Broker Rules route removed for amari-capital branch */}
   <Route path="/analytics" element={<GraphicalAnalyticsPage />} />
           <Route path="/client-dashboard-c" element={<ClientDashboardDesignCPage />} />
         <Route path="/settings" element={<SettingsPage />} />
@@ -92,8 +93,8 @@ function PreloadRoutes() {
         import('./pages/MarginLevelPage')
         import('./pages/LiveDealingPage')
         import('./pages/ClientPercentagePage')
-        import('./pages/BrokerRulePage')
         import('./pages/IBCommissionsPage')
+        // Broker Rules preload removed for amari-capital branch
         import('./pages/SettingsPage')
         import('./pages/GraphicalAnalyticsPage')
         import('./pages/ClientDashboardDesignC')
@@ -112,9 +113,9 @@ function PreloadRoutes() {
 }
 
 function App() {
-  // Set basename for amari-capital deployment
+  // Broker runs at root - no subpath detection
   const getBasename = () => {
-    return '/amari-capital'
+    return '/'
   }
 
   return (

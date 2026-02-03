@@ -10,7 +10,6 @@ const LoginPage = () => {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
 
   const { login, requires2FA, authError } = useAuth()
@@ -31,28 +30,22 @@ const LoginPage = () => {
       return
     }
 
-    setIsLoading(true)
-
     try {
       const result = await login(username, password)
       
       // Handle login response
       if (result?.requires2FA) {
         // 2FA required - AuthContext will handle the state
-        setIsLoading(false)
       } else if (result?.success) {
         // Login successful - user will be redirected by AuthContext
-        setIsLoading(false)
       } else {
-        // Login failed - show error
+        // Login failed - show error immediately
         setErrorMessage(result?.error || 'Invalid username or password. Please try again.')
-        setIsLoading(false)
       }
     } catch (err) {
       // Handle unexpected errors
       console.error('Login error:', err)
       setErrorMessage('An unexpected error occurred. Please try again.')
-      setIsLoading(false)
     }
   }
 
@@ -111,7 +104,6 @@ const LoginPage = () => {
                   onChange={(e) => setUsername(e.target.value)}
                   className="block w-full h-[55px] pl-12 pr-4 text-[#333] bg-[rgba(239,246,255,0.36)] border-[2px] border-[#9CA3AF] rounded-[9px] focus:ring-2 focus:ring-[#9CA3AF] focus:border-[#9CA3AF] transition-all duration-200 placeholder-[#8A93A6]"
                   placeholder="Username"
-                  disabled={isLoading}
                   required
                 />
               </div>
@@ -133,14 +125,12 @@ const LoginPage = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="block w-full h-[55px] pl-12 pr-12 text-[#333] bg-[rgba(239,246,255,0.36)] border-[2px] border-[#9CA3AF] rounded-[9px] focus:ring-2 focus:ring-[#9CA3AF] focus:border-[#9CA3AF] transition-all duration-200 placeholder-[#8A93A6]"
                   placeholder="Password"
-                  disabled={isLoading}
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#999999] hover:text-[#5B8DEF] transition-colors duration-200"
-                  disabled={isLoading}
                 >
                   {showPassword ? (
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -174,17 +164,9 @@ const LoginPage = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isLoading}
-              className="w-full h-[55px] bg-[#2563EB] hover:bg-[#1E55D0] disabled:bg-gray-400 text-white font-bold rounded-[12px] transition-all duration-300 shadow-lg hover:shadow-xl disabled:cursor-not-allowed text-[16px]"
+              className="w-full h-[55px] bg-[#2563EB] hover:bg-[#1E55D0] text-white font-bold rounded-[12px] transition-all duration-300 shadow-lg hover:shadow-xl text-[16px]"
             >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3" />
-                  <span>Signing in...</span>
-                </div>
-              ) : (
-                'Log In'
-              )}
+              Log In
             </button>
           </form>
 
