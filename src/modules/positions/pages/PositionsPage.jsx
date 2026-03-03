@@ -3247,7 +3247,7 @@ const PositionsPage = () => {
                                         <span className={`px-2 py-0.5 text-[11px] font-medium rounded ${v.netType === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{v.netType}</span>
                                       </div>
                                       <div className="mt-1 text-[12px] text-gray-600 flex gap-4">
-                                        <div>NET Vol: <span className="font-semibold text-gray-900">{formatNumber(v.netVolume, 2)}</span></div>
+                                        <div>NET Vol: <span className="font-semibold text-gray-900">{formatNumber(v.exactSymbol?.endsWith('.c') ? v.netVolume / 100 : v.netVolume, 2)}</span></div>
                                         <div>Avg: <span className="font-semibold text-gray-900">{formatNumber(v.avgPrice, 5)}</span></div>
                                         <div>P/L: <span className={`font-semibold ${v.totalProfit>=0?'text-green-700':'text-red-700'}`}>{formatNumber(v.totalProfit, 2)}</span></div>
                                       </div>
@@ -3762,7 +3762,7 @@ const PositionsPage = () => {
                                             <span className={`px-2 py-0.5 text-[11px] font-medium rounded ${v.netType === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{v.netType}</span>
                                           </div>
                                           <div className="mt-1 text-[12px] text-gray-600 flex gap-4">
-                                            <div>NET Vol: <span className="font-semibold text-gray-900">{formatNumber(v.netVolume, 2)}</span></div>
+                                            <div>NET Vol: <span className="font-semibold text-gray-900">{formatNumber(v.exactSymbol?.endsWith('.c') ? v.netVolume / 100 : v.netVolume, 2)}</span></div>
                                             <div>Avg: <span className="font-semibold text-gray-900">{formatNumber(v.avgPrice, 5)}</span></div>
                                             <div>P/L: <span className={`font-semibold ${v.totalProfit>=0?'text-green-700':'text-red-700'}`}>{formatNumber(v.totalProfit, 2)}</span></div>
                                           </div>
