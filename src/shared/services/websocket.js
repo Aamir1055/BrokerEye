@@ -41,9 +41,10 @@ class WebSocketService {
         return null
       }
       // Prefer same-origin in dev; in prod use configured base or default
+      const envApiUrl = import.meta?.env?.VITE_API_BASE_URL
       const base = import.meta?.env?.DEV
         ? ''
-        : (import.meta?.env?.VITE_API_BASE_URL || 'https://api.brokereye.work.gd')
+        : (typeof envApiUrl === 'string' ? envApiUrl : 'https://api.brokereye.work.gd')
       // Force wss for https pages; otherwise use ws
       const wsProtocol = (window.location.protocol === 'https:' || base.startsWith('https')) ? 'wss' : 'ws'
       const wsHost = base.replace(/^https?:\/\//, '')

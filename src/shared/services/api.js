@@ -10,7 +10,8 @@ const IS_LOCAL = (() => {
     return /^(http:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0))(:\d+)?$/i.test(origin)
   } catch { return false }
 })()
-const BASE_URL = IS_LOCAL ? '' : (import.meta?.env?.VITE_API_BASE_URL || (import.meta?.env?.DEV ? '' : 'https://api.brokereye.work.gd'))
+const envApiUrl = import.meta?.env?.VITE_API_BASE_URL
+const BASE_URL = IS_LOCAL ? '' : (typeof envApiUrl === 'string' ? envApiUrl : (import.meta?.env?.DEV ? '' : 'https://api.brokereye.work.gd'))
 if (DEBUG_LOGS) console.log('[API] Base URL:', BASE_URL || '(empty - using Vite proxy)')
 
 const api = axios.create({
@@ -41,15 +42,15 @@ const rawApi = axios.create({
   timeout: 30000,
 })
 
-// IB endpoints use different domain (https://brokereye.work.gd without api. subdomain)
+// IB endpoints - use same base URL (Apache proxy handles routing)
 const ibApi = axios.create({
-  baseURL: 'https://brokereye.work.gd',
+  baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
   timeout: 30000,
 })
-if (DEBUG_LOGS) console.log('[API] IB Base URL (hardcoded):', 'https://brokereye.work.gd')
+if (DEBUG_LOGS) console.log('[API] IB Base URL:', BASE_URL || '(empty - using proxy)')
 
 // Refresh handling state
 let isRefreshing = false

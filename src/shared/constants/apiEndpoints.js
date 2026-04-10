@@ -13,11 +13,12 @@ const IS_LOCAL = (() => {
   }
 })()
 
+const envApiUrl = import.meta?.env?.VITE_API_BASE_URL
 export const BASE_URL = IS_LOCAL 
   ? '' 
-  : (import.meta?.env?.VITE_API_BASE_URL || (import.meta?.env?.DEV ? '' : 'https://api.brokereye.work.gd'))
+  : (typeof envApiUrl === 'string' ? envApiUrl : (import.meta?.env?.DEV ? '' : 'https://api.brokereye.work.gd'))
 
-export const IB_BASE_URL = 'https://brokereye.work.gd'
+export const IB_BASE_URL = BASE_URL
 
 // ==================== AUTH ENDPOINTS ====================
 export const AUTH_ENDPOINTS = {
