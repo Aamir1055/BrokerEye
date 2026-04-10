@@ -7,7 +7,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 // https://vite.dev/config/
 export default defineConfig({
   // Deployed to /amari-capital/ subdirectory
-  base: '/amari-capital/',
+  base: '/',
   test: {
     environment: 'jsdom',
     setupFiles: ['./test/setup.ts'],
