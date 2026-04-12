@@ -134,7 +134,7 @@ const ClientDashboard = ({ totals, clients, totalClients, rebateTotals }) => {
 
   const [selectedCardKeys, setSelectedCardKeys] = useState(getInitialSelectedCards)
   const [showCardSelector, setShowCardSelector] = useState(false)
-  const [performanceTab, setPerformanceTab] = useState('daily') // daily, week, month, lifetime
+  const [performanceTab, setPerformanceTab] = useState('lifetime') // daily, week, month, lifetime
   const [cardSearchQuery, setCardSearchQuery] = useState('')
   
   // Save selected cards to localStorage
@@ -476,15 +476,20 @@ const ClientDashboard = ({ totals, clients, totalClients, rebateTotals }) => {
 
             <div className="space-y-2">
               {[
-                { label: 'Net Flow', value: performanceData.netFlow },
-                { label: 'Bonus + Credit', value: performanceData.bonusCredit },
-                performanceData.adjustments !== undefined && { label: 'Adjustments', value: performanceData.adjustments },
-                { label: 'Floating P/L', value: performanceData.floatingPL },
-                { label: 'Margin Used', value: performanceData.marginUsed },
-                { label: 'Free Margin', value: performanceData.freeMargin }
+                { label: 'Net Flow', value: performanceData.netFlow, icon: FiBarChart2, bgColor: 'bg-blue-100', iconColor: 'text-blue-600' },
+                { label: 'Bonus + Credit', value: performanceData.bonusCredit, icon: FiGift, bgColor: 'bg-purple-100', iconColor: 'text-purple-600' },
+                performanceData.adjustments !== undefined && { label: 'Adjustments', value: performanceData.adjustments, icon: FiRefreshCw, bgColor: 'bg-orange-100', iconColor: 'text-orange-600' },
+                { label: 'Floating P/L', value: performanceData.floatingPL, icon: FiActivity, bgColor: 'bg-yellow-100', iconColor: 'text-yellow-600' },
+                { label: 'Margin Used', value: performanceData.marginUsed, icon: FiLock, bgColor: 'bg-red-100', iconColor: 'text-red-500' },
+                { label: 'Free Margin', value: performanceData.freeMargin, icon: FiZap, bgColor: 'bg-green-100', iconColor: 'text-green-600' }
               ].filter(Boolean).map((item, index) => (
                 <div key={index} className="flex items-center justify-between p-2.5 bg-white rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
-                  <span className="text-xs font-medium text-gray-700">{item.label}</span>
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-7 h-7 ${item.bgColor} rounded-lg flex items-center justify-center`}>
+                      {React.createElement(item.icon, { className: `w-3.5 h-3.5 ${item.iconColor}` })}
+                    </div>
+                    <span className="text-xs font-medium text-gray-700">{item.label}</span>
+                  </div>
                   <span className={`text-base font-bold ${getValueColor(item.value)}`}>
                     ${item.value.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                   </span>
