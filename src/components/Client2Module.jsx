@@ -1449,11 +1449,11 @@ export default function Client2Module() {
         {/* Search Bar and Table Container */}
         <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden mx-1 sm:mx-4">
           {/* Search and Controls Bar */}
-          <div className="border-b border-[#E5E7EB] p-2 sm:p-4">
-            <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="border-b border-[#E5E7EB] px-2 py-1.5 sm:p-4">
+            <div className="flex items-center gap-1 sm:gap-2">
               {/* Search box */}
-              <div className="flex-1 min-w-0 h-8 sm:h-10 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg px-2 sm:px-3 flex items-center gap-1.5">
-                <svg width="14" height="14" viewBox="0 0 18 18" fill="none" className="flex-shrink-0 text-[#9CA3AF]">
+              <div className="flex-1 min-w-0 h-7 sm:h-10 bg-[#F9FAFB] border border-[#E5E7EB] rounded-md px-2 sm:px-3 flex items-center gap-1.5">
+                <svg width="12" height="12" viewBox="0 0 18 18" fill="none" className="flex-shrink-0 text-[#9CA3AF]">
                   <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
                   <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
@@ -1461,7 +1461,7 @@ export default function Client2Module() {
                   placeholder="Search" 
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  className="flex-1 min-w-0 text-xs sm:text-sm text-[#1F2937] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit focus:ring-0" 
+                  className="flex-1 min-w-0 text-[11px] sm:text-sm text-[#1F2937] placeholder-[#9CA3AF] outline-none bg-transparent font-outfit focus:ring-0" 
                 />
               </div>
               
@@ -1472,10 +1472,10 @@ export default function Client2Module() {
                     e.stopPropagation()
                     setIsColumnSelectorOpen(true)
                   }}
-                  className="h-8 w-8 sm:h-10 sm:w-10 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  className="h-7 w-7 sm:h-10 sm:w-10 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
                   title="Show/Hide Columns"
                 >
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
                     <rect x="2" y="3" width="4" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
                     <rect x="8" y="3" width="6" height="10" rx="1" stroke="#4B5563" strokeWidth="1.2"/>
                   </svg>
@@ -1486,17 +1486,17 @@ export default function Client2Module() {
               <button 
                 onClick={goToPreviousPage}
                 disabled={currentPage === 1}
-                className={`h-8 w-8 sm:h-10 sm:w-10 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center transition-colors flex-shrink-0 ${
+                className={`h-7 w-7 sm:h-10 sm:w-10 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center transition-colors flex-shrink-0 ${
                   currentPage === 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer'
                 }`}
               >
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
                   <path d="M12 14L8 10L12 6" stroke="#4B5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
 
               {/* Page indicator */}
-              <div className="flex items-center gap-1 text-xs sm:text-sm text-[#4B5563]">
+              <div className="flex items-center gap-0.5 text-[11px] sm:text-sm text-[#4B5563]">
                 <input
                   type="number"
                   min={1}
@@ -1508,7 +1508,7 @@ export default function Client2Module() {
                       setCurrentPage(n)
                     }
                   }}
-                  className="w-10 sm:w-12 h-7 sm:h-8 border border-[#E5E7EB] rounded-md text-center text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-8 sm:w-12 h-6 sm:h-8 border border-[#E5E7EB] rounded-md text-center text-[11px] sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   aria-label="Current page"
                 />
                 <span className="text-[#9CA3AF]">/</span>
@@ -1519,11 +1519,11 @@ export default function Client2Module() {
               <button 
                 onClick={goToNextPage}
                 disabled={currentPage === totalPages}
-                className={`h-8 w-8 sm:h-10 sm:w-10 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center transition-colors flex-shrink-0 ${
+                className={`h-7 w-7 sm:h-10 sm:w-10 rounded-md bg-white border border-[#E5E7EB] shadow-sm flex items-center justify-center transition-colors flex-shrink-0 ${
                   currentPage === totalPages ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer'
                 }`}
               >
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
                   <path d="M8 6L12 10L8 14" stroke="#4B5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
