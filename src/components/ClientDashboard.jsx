@@ -472,7 +472,6 @@ const ClientDashboard = ({ totals, clients, totalClients, rebateTotals }) => {
             <div className="mb-2">
               <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Account Summary</span>
             </div>
-            <div className="h-8 mb-4"></div>
 
             <div className="space-y-2">
               {[
