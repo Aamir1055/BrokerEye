@@ -136,16 +136,8 @@ const LoginDetailsModal = ({ login, onClose, allPositionsCache }) => {
   }
 
   const fetchClientData = async () => {
-    try {
-      const response = await brokerAPI.getClients()
-      const allClients = response.data?.clients || []
-      const client = allClients.find(c => c.login === login)
-      if (client) {
-        setClientData(client)
-      }
-    } catch (error) {
-      console.error('Failed to fetch client data:', error)
-    }
+    // /api/broker/clients endpoint not in use - skip to prevent CORS errors
+    console.warn('[LoginDetailsModal] fetchClientData skipped - /api/broker/clients endpoint not available')
   }
 
   // Get unique values for a column (for filter dropdown)

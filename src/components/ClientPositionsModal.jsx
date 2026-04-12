@@ -527,17 +527,8 @@ const ClientPositionsModal = ({ client, onClose, onClientUpdate, allPositionsCac
   }
 
   const fetchUpdatedClientData = async () => {
-    try {
-      // Silently fetch updated client data
-      const response = await brokerAPI.getClients()
-      const allClients = response.data?.clients || []
-      const updatedClient = allClients.find(c => c.login === client.login)
-      if (updatedClient) {
-        setClientData(updatedClient)
-      }
-    } catch (error) {
-      // Silent error handling
-    }
+    // /api/broker/clients endpoint not in use - skip to prevent CORS errors
+    console.warn('[ClientPositionsModal] fetchUpdatedClientData skipped - /api/broker/clients endpoint not available')
   }
 
   const fetchAvailableRules = async () => {

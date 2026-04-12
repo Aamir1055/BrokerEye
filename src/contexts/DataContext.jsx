@@ -656,18 +656,10 @@ export const DataProvider = ({ children }) => {
 
     setLoading(prev => ({ ...prev, accounts: true }))
     
-    try {
-      const response = await fetchWithRetry(() => brokerAPI.getClients(), { retries: 2, baseDelayMs: 700, label: 'getAccounts(getClients)' })
-      const data = response.data?.clients || []
-      setAccounts(data)
-      setLastFetch(prev => ({ ...prev, accounts: Date.now() }))
-      return data
-    } catch (error) {
-      console.error('[DataContext] Failed to fetch accounts:', error)
-      throw error
-    } finally {
-      setLoading(prev => ({ ...prev, accounts: false }))
-    }
+    // /api/broker/clients endpoint not in use - skip to prevent CORS errors
+    console.warn('[DataContext] fetchAccounts skipped - /api/broker/clients endpoint not available')
+    setLoading(prev => ({ ...prev, accounts: false }))
+    return accountsRef.current
   }, [isAuthenticated, fetchWithRetry])
 
   // Setup WebSocket subscriptions (only after initial data is loaded)
@@ -2005,6 +1997,9 @@ export const DataProvider = ({ children }) => {
 
   // Verify current totals against a fresh API read; optionally apply fix
   const verifyAgainstAPI = useCallback(async (apply = false) => {
+    // /api/broker/clients endpoint not in use - skip to prevent CORS errors
+    console.warn('[DataContext] verifyAgainstAPI skipped - /api/broker/clients endpoint not available')
+    return
     const response = await fetchWithRetry(() => brokerAPI.getClients(), { retries: 1, baseDelayMs: 600, label: 'verify:getClients' })
     const raw = response.data?.clients || []
     const normalized = raw.map(normalizeUSCValues)
