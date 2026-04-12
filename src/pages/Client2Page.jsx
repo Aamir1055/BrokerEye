@@ -3744,10 +3744,10 @@ const Client2Page = () => {
         }}
       />
 
-      <main className={`flex-1 p-6 overflow-x-hidden relative z-10 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
+      <main className={`flex-1 p-2 sm:p-4 lg:p-6 overflow-x-hidden relative z-10 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
         <div className="max-w-full mx-auto h-full flex flex-col min-h-0">
           {/* Header Section */}
-          <div className="bg-white rounded-2xl shadow-sm px-6 py-3 mb-6">
+          <div className="bg-white rounded-2xl shadow-sm px-3 sm:px-6 py-3 mb-4 sm:mb-6">
             {/* Title + Actions */}
             <div className="mb-2.5 pb-2.5 flex items-center justify-between gap-3">
               <div>

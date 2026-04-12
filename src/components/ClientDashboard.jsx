@@ -435,7 +435,7 @@ const ClientDashboard = ({ totals, clients, totalClients, rebateTotals }) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Left: P&L Performance */}
           <div className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-lg shadow-md border border-gray-100">
             <div className="mb-2">

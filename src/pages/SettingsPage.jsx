@@ -191,7 +191,7 @@ const SettingsPage = () => {
             onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
           />
         )}
-        <main className={`flex-1 p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
+        <main className={`flex-1 p-4 lg:p-6 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
           <div className="max-w-4xl mx-auto">
             {/* Shimmer Loading Cards */}
             <div className="mb-5">
@@ -236,7 +236,7 @@ const SettingsPage = () => {
       )}
       
       {/* Main Content */}
-      <main className={`flex-1 p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
+      <main className={`flex-1 p-4 lg:p-6 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
         <div className="max-w-4xl mx-auto">
           {/* Header Section */}
           <div className="mb-5">

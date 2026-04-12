@@ -211,7 +211,7 @@ const GraphicalAnalyticsPage = () => {
         onToggle={() => setSidebarOpen(v => { const n = !v; try { localStorage.setItem('sidebarOpen', JSON.stringify(n)) } catch {}; return n })}
       />
       
-      <main className={`flex-1 p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} overflow-x-hidden`}>
+      <main className={`flex-1 p-4 lg:p-6 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} overflow-x-hidden`}>
         <div className="max-w-[1600px] mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">

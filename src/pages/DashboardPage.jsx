@@ -535,7 +535,7 @@ const DashboardPage = () => {
       />
       
       {/* Main Content */}
-      <main className={`flex-1 p-3 sm:p-4 lg:p-6 overflow-x-hidden transition-all duration-300 ${sidebarOpen ? 'ml-60' : 'ml-16'}`}>
+      <main className={`flex-1 p-3 sm:p-4 lg:p-6 overflow-x-hidden transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'}`}>
         <div className="w-full mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">

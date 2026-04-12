@@ -2429,7 +2429,7 @@ const ClientsPage = () => {
         })}
       />
       
-      <main className={`flex-1 p-3 sm:p-4 lg:p-6 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} overflow-auto relative z-10`}>
+      <main className={`flex-1 p-3 sm:p-4 lg:p-6 transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-16'} overflow-auto relative z-10`}>
         <div className="max-w-full mx-auto flex flex-col min-h-0">
 
           {/* Desktop header */}
