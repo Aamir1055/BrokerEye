@@ -1120,7 +1120,7 @@ export default function LiveDealingModule() {
             WebkitOverflowScrolling: 'touch',
             scrollbarWidth: 'thin',
             scrollbarColor: '#CBD5E0 #F7FAFC',
-            paddingRight: '16px',
+            paddingRight: '0px',
             paddingLeft: '0px'
           }}>
             <div className="relative" style={{ minWidth: 'max-content' }}>
