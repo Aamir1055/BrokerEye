@@ -1538,7 +1538,7 @@ export default function Client2Module() {
             scrollbarWidth: 'thin',
             scrollbarColor: '#CBD5E0 #F7FAFC',
             paddingRight: '16px',
-            paddingLeft: '4px'
+            paddingLeft: '0px'
           }}>
             <div className="relative" style={{ minWidth: 'max-content' }}>
               {/* Header row */}
