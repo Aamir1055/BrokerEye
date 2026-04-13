@@ -1449,7 +1449,7 @@ export default function Client2Module() {
         {/* Search Bar and Table Container */}
         <div className="bg-white rounded-lg shadow-sm border border-blue-100 overflow-hidden mx-1 sm:mx-4">
           {/* Search and Controls Bar */}
-          <div className="border-b border-[#E5E7EB] px-2 py-1.5 sm:p-4">
+          <div className="border-b border-[#E5E7EB] px-3 py-3 sm:p-4">
             <div className="flex items-center gap-1 sm:gap-2">
               {/* Search box */}
               <div className="flex-1 min-w-0 h-7 sm:h-10 bg-[#F9FAFB] border border-[#E5E7EB] rounded-md px-2 sm:px-3 flex items-center gap-1.5">
