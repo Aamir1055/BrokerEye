@@ -359,8 +359,8 @@ export default function PositionModule() {
             exactSymbol: exact,
             netType: vNet > 0 ? 'Sell' : 'Buy',
             netVolume: Math.abs(vNet),
-            avgPrice: vAvg,
-            totalProfit: tp,
+            avgPrice: /[cC]$/.test(exact) ? vAvg / 100 : vAvg,
+            totalProfit: /[cC]$/.test(exact) ? tp / 100 : tp,
             totalStorage: ts,
             totalCommission: tc
           }
@@ -371,8 +371,8 @@ export default function PositionModule() {
         symbol: group.key,
         netType,
         netVolume: Math.abs(netVolume),
-        avgPrice,
-        totalProfit,
+        avgPrice: /[cC]$/.test(group.key) ? avgPrice / 100 : avgPrice,
+        totalProfit: /[cC]$/.test(group.key) ? totalProfit / 100 : totalProfit,
         totalStorage,
         totalCommission,
         loginCount,
@@ -454,8 +454,8 @@ export default function PositionModule() {
           symbol,
           netType,
           netVolume: Math.abs(netVol),
-          avgPrice: avg,
-          totalProfit: tp,
+          avgPrice: /[cC]$/.test(symbol) ? avg / 100 : avg,
+          totalProfit: /[cC]$/.test(symbol) ? tp / 100 : tp,
           totalStorage: ts,
           totalCommission: tc,
           totalPositions
@@ -663,14 +663,18 @@ export default function PositionModule() {
           </div>
         )
       case 'totalProfit':
-      case 'profit':
+      case 'profit': {
+        const rawProfit = pos.profit || 0
+        const isCentSym = /[cC]$/.test(String(pos.symbol || ''))
+        const displayProfit = isCentSym ? rawProfit / 100 : rawProfit
         return (
           <div className={`h-[38px] flex items-center justify-start px-2 font-medium ${
-            (pos.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+            displayProfit >= 0 ? 'text-green-600' : 'text-red-600'
           } ${stickyClass}`} style={stickyStyle}>
-            {formatNum(pos.profit || 0)}
+            {formatNum(displayProfit)}
           </div>
         )
+      }
       case 'priceOpen':
         return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.priceOpen || 0)}</div>
       case 'priceCurrent':
@@ -682,8 +686,11 @@ export default function PositionModule() {
         return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.volumePercentage || 0)}%</div>
       case 'profitPercentage':
         return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.profitPercentage || 0)}%</div>
-      case 'storage':
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.storage || 0)}</div>
+      case 'storage': {
+        const isCentSym = /[cC]$/.test(String(pos.symbol || ''))
+        const displayStorage = isCentSym ? (pos.storage || 0) / 100 : (pos.storage || 0)
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(displayStorage)}</div>
+      }
       case 'storagePercentage':
         return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.storagePercentage || 0)}%</div>
       case 'appliedPercentage':
@@ -692,8 +699,11 @@ export default function PositionModule() {
         return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.sl || 0)}</div>
       case 'tp':
         return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.tp || 0)}</div>
-      case 'commission':
-        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(pos.commission || 0)}</div>
+      case 'commission': {
+        const isCentSym = /[cC]$/.test(String(pos.symbol || ''))
+        const displayCommission = isCentSym ? (pos.commission || 0) / 100 : (pos.commission || 0)
+        return <div className={`h-[38px] flex items-center justify-start px-2 ${stickyClass}`} style={stickyStyle}>{formatNum(displayCommission)}</div>
+      }
       case 'login':
         const handleLoginClick = () => {
           const fullClient = clients.find(c => String(c.login) === String(pos.login))
@@ -748,7 +758,10 @@ export default function PositionModule() {
   // Update cards when filtered positions change (includes date filter)
   useEffect(() => {
     const totalPositions = filteredPositions.length
-    const totalFloatingProfit = filteredPositions.reduce((sum, p) => sum + (p.profit || 0), 0)
+    const totalFloatingProfit = filteredPositions.reduce((sum, p) => {
+      const val = p.profit || 0
+      return sum + (/[cC]$/.test(String(p.symbol || '')) ? val / 100 : val)
+    }, 0)
     const uniqueLogins = new Set(filteredPositions.map(p => p.login)).size
     const uniqueSymbols = new Set(filteredPositions.map(p => p.symbol)).size
     

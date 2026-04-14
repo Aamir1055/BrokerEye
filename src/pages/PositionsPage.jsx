@@ -698,10 +698,13 @@ const PositionsPage = () => {
   }
 
   // Helper function to adjust value for USC symbols (divide by 100)
-  const adjustValueForSymbol = (value, symbol) => {
+  const adjustValueForSymbol = (value, symbol, isCentField = false) => {
     if (!symbol || value === null || value === undefined) return value
     const symbolStr = String(symbol).toUpperCase()
     if (symbolStr.includes('USC')) {
+      return Number(value) / 100
+    }
+    if (isCentField && /[cC]$/.test(String(symbol))) {
       return Number(value) / 100
     }
     return value
@@ -872,8 +875,8 @@ const PositionsPage = () => {
             exactSymbol: exact,
             netType: vNet > 0 ? 'Sell' : 'Buy',
             netVolume: Math.abs(vNet),
-            avgPrice: vAvg,
-            totalProfit: tp,
+            avgPrice: /[cC]$/.test(exact) ? vAvg / 100 : vAvg,
+            totalProfit: /[cC]$/.test(exact) ? tp / 100 : tp,
             totalStorage: ts,
             totalCommission: tc
           }
@@ -884,8 +887,8 @@ const PositionsPage = () => {
         symbol: group.key,
         netType,
         netVolume: Math.abs(netVolume),
-        avgPrice,
-        totalProfit,
+        avgPrice: /[cC]$/.test(group.key) ? avgPrice / 100 : avgPrice,
+        totalProfit: /[cC]$/.test(group.key) ? totalProfit / 100 : totalProfit,
         totalStorage,
         totalCommission,
         loginCount,
@@ -1096,7 +1099,10 @@ const PositionsPage = () => {
   const summaryStats = useMemo(() => {
     const totalPositions = ibFilteredPositions.length
     // Invert profit values to show broker perspective (client loss = broker gain)
-    const totalFloatingProfit = -ibFilteredPositions.reduce((sum, p) => sum + (p.profit || 0), 0)
+    const totalFloatingProfit = -ibFilteredPositions.reduce((sum, p) => {
+      const val = p.profit || 0
+      return sum + (/[cC]$/.test(String(p.symbol || '')) ? val / 100 : val)
+    }, 0)
     const totalFloatingProfitPercentage = -ibFilteredPositions.reduce((sum, p) => sum + (p.profit_percentage || 0), 0)
     const uniqueLogins = new Set(ibFilteredPositions.map(p => p.login)).size
     const uniqueSymbols = new Set(ibFilteredPositions.map(p => p.symbol)).size
@@ -1355,12 +1361,12 @@ const PositionsPage = () => {
             const use2 = nv>0? data.buyPositions : data.sellPositions
             use2.forEach(p=>{const v=p.volume||0; const pr=p.priceOpen||0; tw2+=pr*v; tv2+=v; tp2+=p.profit||0})
             const avg2 = tv2>0? tw2/tv2:0
-            return { exactSymbol: exact, netType: nv>0? 'Buy':'Sell', netVolume: Math.abs(nv), avgPrice: avg2, totalProfit: tp2 }
+            return { exactSymbol: exact, netType: nv>0? 'Buy':'Sell', netVolume: Math.abs(nv), avgPrice: avg2, totalProfit: /[cC]$/.test(exact) ? tp2 / 100 : tp2 }
           }).filter(Boolean)
         }
   // Add totalPositions count (buy + sell) so Client NET Positions column is populated
   const totalPositions = bucket.buyPositions.length + bucket.sellPositions.length
-  rows.push({ login, symbol: key, netType, netVolume: Math.abs(netVol), avgPrice: avg, totalProfit: tp, totalPositions, variantCount, variants })
+  rows.push({ login, symbol: key, netType, netVolume: Math.abs(netVol), avgPrice: avg, totalProfit: /[cC]$/.test(key) ? tp / 100 : tp, totalPositions, variantCount, variants })
       })
     })
     // Sort by login then volume desc for stability
@@ -3943,7 +3949,7 @@ const PositionsPage = () => {
                               <span className={`px-2 py-0.5 text-xs font-medium rounded transition-all duration-300 ${
                                 (p.profit || 0) >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                               }`}>
-                                {formatNumber(adjustValueForSymbol(p.profit, p.symbol), 2)}
+                                {formatNumber(adjustValueForSymbol(p.profit, p.symbol, true), 2)}
                               </span>
                             </td>
                           )}
@@ -3957,7 +3963,7 @@ const PositionsPage = () => {
                             </td>
                           )}
                           {effectiveCols.storage && (
-                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(adjustValueForSymbol(p.storage, p.symbol), 2)}</td>
+                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(adjustValueForSymbol(p.storage, p.symbol, true), 2)}</td>
                           )}
                           {effectiveCols.storagePercentage && (
                             <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">
@@ -3986,7 +3992,7 @@ const PositionsPage = () => {
                             </td>
                           )}
                           {effectiveCols.commission && (
-                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(adjustValueForSymbol(p.commission, p.symbol), 2)}</td>
+                            <td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">{formatNumber(adjustValueForSymbol(p.commission, p.symbol, true), 2)}</td>
                           )}
                         </tr>
                       )
