@@ -19,6 +19,9 @@
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   
+  # Only serve SPA fallback for the frontend domain, not the API domain
+  RewriteCond %{HTTP_HOST} !^api\.brokereye\.work\.gd$ [NC]
+  
   # Rewrite everything else to index.html to allow html5 state links
   RewriteRule ^ index.html [L]
 </IfModule>
