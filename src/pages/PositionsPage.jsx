@@ -1361,12 +1361,12 @@ const PositionsPage = () => {
             const use2 = nv>0? data.buyPositions : data.sellPositions
             use2.forEach(p=>{const v=p.volume||0; const pr=p.priceOpen||0; tw2+=pr*v; tv2+=v; tp2+=p.profit||0})
             const avg2 = tv2>0? tw2/tv2:0
-            return { exactSymbol: exact, netType: nv>0? 'Buy':'Sell', netVolume: Math.abs(nv), avgPrice: avg2, totalProfit: /[cC]$/.test(exact) ? tp2 / 100 : tp2 }
+            return { exactSymbol: exact, netType: nv>0? 'Buy':'Sell', netVolume: Math.abs(nv), avgPrice: avg2, totalProfit: tp2 }
           }).filter(Boolean)
         }
   // Add totalPositions count (buy + sell) so Client NET Positions column is populated
   const totalPositions = bucket.buyPositions.length + bucket.sellPositions.length
-  rows.push({ login, symbol: key, netType, netVolume: Math.abs(netVol), avgPrice: avg, totalProfit: /[cC]$/.test(key) ? tp / 100 : tp, totalPositions, variantCount, variants })
+  rows.push({ login, symbol: key, netType, netVolume: Math.abs(netVol), avgPrice: avg, totalProfit: tp, totalPositions, variantCount, variants })
       })
     })
     // Sort by login then volume desc for stability

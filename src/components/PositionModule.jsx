@@ -454,10 +454,10 @@ export default function PositionModule() {
           symbol,
           netType,
           netVolume: Math.abs(netVol),
-          avgPrice: /[cC]$/.test(symbol) ? avg / 100 : avg,
+          avgPrice: avg,
           totalProfit: /[cC]$/.test(symbol) ? tp / 100 : tp,
-          totalStorage: ts,
-          totalCommission: tc,
+          totalStorage: /[cC]$/.test(symbol) ? ts / 100 : ts,
+          totalCommission: /[cC]$/.test(symbol) ? tc / 100 : tc,
           totalPositions
         })
       })
