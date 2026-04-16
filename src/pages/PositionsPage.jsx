@@ -110,9 +110,9 @@ const PositionsPage = () => {
   // NET Position sorting
   const [netSortColumn, setNetSortColumn] = useState(null)
   const [netSortDirection, setNetSortDirection] = useState('asc')
-  // Suggestion-based search for NET view
+  // Search for NET view
   const [netSearchQuery, setNetSearchQuery] = useState('')
-  const [netShowSuggestions, setNetShowSuggestions] = useState(false)
+  const [netActiveSearch, setNetActiveSearch] = useState('') // only sent to API on Enter or search icon click
   const netSearchRef = useRef(null)
   const netCardFilterRef = useRef(null)
   // Card filter for NET summary cards
@@ -150,7 +150,7 @@ const PositionsPage = () => {
   const [clientNetSortDirection, setClientNetSortDirection] = useState('asc')
   // Client NET search
   const [clientNetSearchQuery, setClientNetSearchQuery] = useState('')
-  const [clientNetShowSuggestions, setClientNetShowSuggestions] = useState(false)
+  const [clientNetActiveSearch, setClientNetActiveSearch] = useState('') // only sent to API on Enter or search icon click
   const clientNetSearchRef = useRef(null)
   const clientNetCardFilterRef = useRef(null)
   // Client NET pagination
@@ -394,6 +394,7 @@ const PositionsPage = () => {
       
       return { ...prev, [columnKey]: newFilters }
     })
+    setCurrentPage(1)
   }
 
   const selectAllFilters = (columnKey) => {
@@ -402,6 +403,7 @@ const PositionsPage = () => {
       ...prev,
       [columnKey]: allValues
     }))
+    setCurrentPage(1)
   }
 
   const deselectAllFilters = (columnKey) => {
@@ -409,6 +411,7 @@ const PositionsPage = () => {
       const { [columnKey]: _, ...rest } = prev
       return rest
     })
+    setCurrentPage(1)
   }
 
   const clearColumnFilter = (columnKey) => {
@@ -422,6 +425,7 @@ const PositionsPage = () => {
       return rest
     })
     setShowFilterDropdown(null)
+    setCurrentPage(1)
   }
 
   const getActiveFilterCount = (columnKey) => {
@@ -463,6 +467,7 @@ const PositionsPage = () => {
     setShowCustomFilterModal(false)
     setShowFilterDropdown(null)
     setShowNumberFilterDropdown(null)
+    setCurrentPage(1)
     
     // Reset form
     setCustomFilterValue1('')
@@ -551,8 +556,7 @@ const PositionsPage = () => {
   const prevPositionsRef = useRef([])
 
     useEffect(() => {
-    if (!isAuthenticated) {
-      console.log('[Positions] ⚠️ Not authenticated, skipping fetch')
+    if (!isAuthenticated || showNetPositions || showClientNet) {
       return
     }
 
@@ -571,6 +575,7 @@ const PositionsPage = () => {
         if (activeSearch.trim()) {
           params.search = activeSearch.trim()
         }
+
         const response = await brokerAPI.searchPositions(params)
         if (isCancelled) return
         const data = response?.data?.positions || response?.positions || []
@@ -586,32 +591,25 @@ const PositionsPage = () => {
           console.warn('[Positions] Polling error:', err?.message)
         }
       }
-    }
-
-    const startPolling = () => {
-      if (timer) return
-      poll()
-      timer = setInterval(poll, 1000)
-    }
-
-    const stopPolling = () => {
-      if (timer) {
-        clearInterval(timer)
-        timer = null
+      if (!isCancelled) {
+        timer = setTimeout(poll, 2000)
       }
     }
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible') startPolling()
-      else stopPolling()
+      if (document.visibilityState === 'visible') {
+        if (!timer) poll()
+      } else {
+        if (timer) { clearTimeout(timer); timer = null }
+      }
     }
 
-    if (document.visibilityState === 'visible') startPolling()
+    if (document.visibilityState === 'visible') poll()
     document.addEventListener('visibilitychange', onVisibilityChange)
 
     return () => {
       isCancelled = true
-      stopPolling()
+      if (timer) { clearTimeout(timer); timer = null }
       document.removeEventListener('visibilitychange', onVisibilityChange)
       // Mark component as unmounted to prevent state updates
       isMountedRef.current = false
@@ -622,7 +620,7 @@ const PositionsPage = () => {
         flashTimeouts.current.clear()
       } catch {}
     }
-  }, [isAuthenticated, currentPage, itemsPerPage, sortColumn, sortDirection, activeSearch])
+  }, [isAuthenticated, showNetPositions, showClientNet, currentPage, itemsPerPage, sortColumn, sortDirection, activeSearch])
 
   // REST polling for NET positions (netPosition: true) when NET tab is active
   useEffect(() => {
@@ -644,7 +642,7 @@ const PositionsPage = () => {
           sortOrder: netSortDirection || 'desc'
         }
         if (groupByBaseSymbol) params.groupBaseSymbol = true
-        if (netSearchQuery.trim()) params.search = netSearchQuery.trim()
+        if (netActiveSearch.trim()) params.search = netActiveSearch.trim()
 
         const response = await brokerAPI.searchPositions(params)
         if (isCancelled) return
@@ -652,7 +650,14 @@ const PositionsPage = () => {
         const total = response?.data?.total || response?.total || 0
         const totals = response?.data?.totals || response?.totals || null
         if (Array.isArray(data)) {
-          if (totals) setServerNetTotals(totals)
+          if (totals) {
+            // Map API field names (netVolume, totalProfit, totalStorage) to our state field names
+            setServerNetTotals({
+              volume: totals.netVolume ?? totals.volume ?? 0,
+              profit: totals.totalProfit ?? totals.profit ?? 0,
+              storage: totals.totalStorage ?? totals.storage ?? 0
+            })
+          }
           // Map API fields to UI field names
           const mapped = data.map(item => ({
             symbol: item.symbol,
@@ -681,23 +686,27 @@ const PositionsPage = () => {
       } catch (err) {
         if (!isCancelled) console.warn('[NET Positions] Polling error:', err?.message)
       }
+      if (!isCancelled) {
+        timer = setTimeout(poll, 2000)
+      }
     }
 
-    const startPolling = () => { if (timer) return; poll(); timer = setInterval(poll, 1000) }
-    const stopPolling = () => { if (timer) { clearInterval(timer); timer = null } }
     const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible') startPolling()
-      else stopPolling()
+      if (document.visibilityState === 'visible') {
+        if (!timer) poll()
+      } else {
+        if (timer) { clearTimeout(timer); timer = null }
+      }
     }
-    if (document.visibilityState === 'visible') startPolling()
+    if (document.visibilityState === 'visible') poll()
     document.addEventListener('visibilitychange', onVisibilityChange)
 
     return () => {
       isCancelled = true
-      stopPolling()
+      if (timer) { clearTimeout(timer); timer = null }
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
-  }, [isAuthenticated, showNetPositions, netCurrentPage, netItemsPerPage, netSortColumn, netSortDirection, netSearchQuery, groupByBaseSymbol])
+  }, [isAuthenticated, showNetPositions, netCurrentPage, netItemsPerPage, netSortColumn, netSortDirection, netActiveSearch, groupByBaseSymbol])
 
   // REST polling for Client NET positions (clientNet: true) when Client NET tab is active
   useEffect(() => {
@@ -718,7 +727,7 @@ const PositionsPage = () => {
           sortBy: clientNetSortColumn || 'login',
           sortOrder: clientNetSortDirection || 'asc'
         }
-        if (clientNetSearchQuery.trim()) params.search = clientNetSearchQuery.trim()
+        if (clientNetActiveSearch.trim()) params.search = clientNetActiveSearch.trim()
 
         const response = await brokerAPI.searchPositions(params)
         if (isCancelled) return
@@ -726,7 +735,14 @@ const PositionsPage = () => {
         const total = response?.data?.total || response?.total || 0
         const totals = response?.data?.totals || response?.totals || null
         if (Array.isArray(data)) {
-          if (totals) setServerClientNetTotals(totals)
+          if (totals) {
+            // Map API field names (netVolume, totalProfit, totalStorage) to our state field names
+            setServerClientNetTotals({
+              volume: totals.netVolume ?? totals.volume ?? 0,
+              profit: totals.totalProfit ?? totals.profit ?? 0,
+              storage: totals.totalStorage ?? totals.storage ?? 0
+            })
+          }
           // Map API fields to UI field names
           const mapped = data.map(item => ({
             login: item.login,
@@ -751,23 +767,27 @@ const PositionsPage = () => {
       } catch (err) {
         if (!isCancelled) console.warn('[Client NET Positions] Polling error:', err?.message)
       }
+      if (!isCancelled) {
+        timer = setTimeout(poll, 2000)
+      }
     }
 
-    const startPolling = () => { if (timer) return; poll(); timer = setInterval(poll, 1000) }
-    const stopPolling = () => { if (timer) { clearInterval(timer); timer = null } }
     const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible') startPolling()
-      else stopPolling()
+      if (document.visibilityState === 'visible') {
+        if (!timer) poll()
+      } else {
+        if (timer) { clearTimeout(timer); timer = null }
+      }
     }
-    if (document.visibilityState === 'visible') startPolling()
+    if (document.visibilityState === 'visible') poll()
     document.addEventListener('visibilitychange', onVisibilityChange)
 
     return () => {
       isCancelled = true
-      stopPolling()
+      if (timer) { clearTimeout(timer); timer = null }
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
-  }, [isAuthenticated, showClientNet, clientNetCurrentPage, clientNetItemsPerPage, clientNetSortColumn, clientNetSortDirection, clientNetSearchQuery])
+  }, [isAuthenticated, showClientNet, clientNetCurrentPage, clientNetItemsPerPage, clientNetSortColumn, clientNetSortDirection, clientNetActiveSearch])
 
   // Track position changes for flash indicators (polling updates)
   useEffect(() => { if (!isAuthenticated) return;
@@ -825,12 +845,6 @@ const PositionsPage = () => {
           displayButtonRef.current && !displayButtonRef.current.contains(event.target)) {
         setShowDisplayMenu(false)
       }
-      if (netSearchRef.current && !netSearchRef.current.contains(event.target)) {
-        setNetShowSuggestions(false)
-      }
-      if (clientNetSearchRef.current && !clientNetSearchRef.current.contains(event.target)) {
-        setClientNetShowSuggestions(false)
-      }
       if (netCardFilterRef.current && !netCardFilterRef.current.contains(event.target)) {
         setNetCardFilterOpen(false)
       }
@@ -849,8 +863,6 @@ const PositionsPage = () => {
       if (event.key === 'Escape') {
         if (showDisplayMenu) setShowDisplayMenu(false)
         if (showColumnSelector) setShowColumnSelector(false)
-        if (netShowSuggestions) setNetShowSuggestions(false)
-        if (clientNetShowSuggestions) setClientNetShowSuggestions(false)
         if (netCardFilterOpen) setNetCardFilterOpen(false)
         if (clientNetCardFilterOpen) setClientNetCardFilterOpen(false)
         if (netShowColumnSelector) setNetShowColumnSelector(false)
@@ -858,7 +870,7 @@ const PositionsPage = () => {
       }
     }
 
-    if (showDisplayMenu || showColumnSelector || netShowSuggestions || clientNetShowSuggestions || netCardFilterOpen || clientNetCardFilterOpen || netShowColumnSelector || clientNetShowColumnSelector) {
+    if (showDisplayMenu || showColumnSelector || netCardFilterOpen || clientNetCardFilterOpen || netShowColumnSelector || clientNetShowColumnSelector) {
       document.addEventListener('mousedown', handleClickOutside, true)
       document.addEventListener('keydown', handleKeyDown)
       return () => {
@@ -866,7 +878,7 @@ const PositionsPage = () => {
         document.removeEventListener('keydown', handleKeyDown)
       }
     }
-  }, [showDisplayMenu, showColumnSelector, netShowSuggestions, clientNetShowSuggestions, netCardFilterOpen, clientNetCardFilterOpen, netShowColumnSelector, clientNetShowColumnSelector, isAuthenticated])
+  }, [showDisplayMenu, showColumnSelector, netCardFilterOpen, clientNetCardFilterOpen, netShowColumnSelector, clientNetShowColumnSelector, isAuthenticated])
 
   // Helper to get position key/id
   const getPosKey = (obj) => {
@@ -1280,7 +1292,7 @@ const PositionsPage = () => {
       })
     }
     
-    // Apply column filters
+    // Apply column filters (checkbox + number/text condition filters)
     Object.entries(columnFilters).forEach(([columnKey, values]) => {
       if (columnKey.endsWith('_number')) {
         const actualColumnKey = columnKey.replace('_number', '')
@@ -1379,23 +1391,16 @@ const PositionsPage = () => {
   // NET positions data — fetched from server via polling (netPosition: true)
   const netPositionsData = polledNetPositions
 
-  // NET suggestions
-  const getNetSuggestions = () => {
-    if (!netSearchQuery.trim()) return []
-    const q = netSearchQuery.toLowerCase().trim()
-    const s = new Set()
-    netPositionsData.forEach(row => {
-      if (String(row.symbol || '').toLowerCase().includes(q)) s.add(`Symbol: ${row.symbol}`)
-      if (String(row.netType || '').toLowerCase().includes(q)) s.add(`NET Type: ${row.netType}`)
-    })
-    return Array.from(s).slice(0, 10)
+  const handleNetSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      setNetActiveSearch(netSearchQuery.trim())
+      setNetCurrentPage(1)
+    }
   }
-  const handleNetSuggestionClick = (suggestion) => {
-    const value = suggestion.split(': ')[1]
-    setNetSearchQuery(value)
-    setNetShowSuggestions(false)
+  const handleNetSearchClick = () => {
+    setNetActiveSearch(netSearchQuery.trim())
+    setNetCurrentPage(1)
   }
-  const handleNetSearchKeyDown = (e) => { if (e.key === 'Enter') setNetShowSuggestions(false) }
 
   // NET Position sorting handler
   const handleNetSort = (columnKey) => {
@@ -1428,24 +1433,16 @@ const PositionsPage = () => {
   // Client NET positions data — fetched from server via polling (clientNet: true)
   const clientNetPositionsData = polledClientNetPositions
 
-  // Client NET search suggestions and filtering
-  const getClientNetSuggestions = () => {
-    if (!clientNetSearchQuery.trim()) return []
-    const q = clientNetSearchQuery.toLowerCase().trim()
-    const s = new Set()
-    clientNetPositionsData.forEach(row => {
-      if (String(row.login || '').toLowerCase().includes(q)) s.add(`Login: ${row.login}`)
-      if (String(row.symbol || '').toLowerCase().includes(q)) s.add(`Symbol: ${row.symbol}`)
-      if (String(row.netType || '').toLowerCase().includes(q)) s.add(`NET Type: ${row.netType}`)
-    })
-    return Array.from(s).slice(0, 10)
+  const handleClientNetSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      setClientNetActiveSearch(clientNetSearchQuery.trim())
+      setClientNetCurrentPage(1)
+    }
   }
-  const handleClientNetSuggestionClick = (suggestion) => {
-    const value = suggestion.split(': ')[1]
-    setClientNetSearchQuery(value)
-    setClientNetShowSuggestions(false)
+  const handleClientNetSearchClick = () => {
+    setClientNetActiveSearch(clientNetSearchQuery.trim())
+    setClientNetCurrentPage(1)
   }
-  const handleClientNetSearchKeyDown = (e) => { if (e.key === 'Enter') setClientNetShowSuggestions(false) }
 
   // Client NET sorting handler
   const handleClientNetSort = (columnKey) => {
@@ -2712,27 +2709,8 @@ const PositionsPage = () => {
                           <polygon points="5,0 10,10 0,10" fill="#DC2626"/>
                         </svg>
                       )}
-                      <span>{formatNumber(Math.abs(serverNetTotals.profit || 0),2)}</span>
+                      <span>{formatNumber(serverNetTotals.profit || 0,2)}</span>
                       <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">USD</span>
-                    </div>
-                  </div>
-                )}
-                {netCardsVisible.totalLogins && (
-                  <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
-                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Total Logins</span>
-                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
-                        <img 
-                          src={getCardIcon('Total Logins')} 
-                          alt="Total Logins"
-                          style={{ width: '100%', height: '100%' }}
-                          onError={(e) => { e.target.style.display = 'none' }}
-                        />
-                      </div>
-                    </div>
-                    <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
-                      <span>{netFilteredPositions.reduce((s,p)=>s+p.loginCount,0)}</span>
-                      <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">ACCT</span>
                     </div>
                   </div>
                 )}
@@ -2747,28 +2725,39 @@ const PositionsPage = () => {
                     <div className="flex items-center flex-wrap gap-3">
                       {/* NET search on the left */}
                       <div className="relative" ref={netSearchRef}>
+                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9CA3AF] pointer-events-none" fill="none" viewBox="0 0 18 18">
+                          <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                          <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                        </svg>
                         <input
                           type="text"
                           value={netSearchQuery}
-                          onChange={(e) => { setNetSearchQuery(e.target.value); setNetShowSuggestions(true); setNetCurrentPage(1) }}
-                          onFocus={() => setNetShowSuggestions(true)}
+                          onChange={(e) => setNetSearchQuery(e.target.value)}
                           onKeyDown={handleNetSearchKeyDown}
-                          placeholder="Search symbol or NET type..."
-                          className="pl-9 pr-9 py-3.5 text-xs border border-indigo-200 rounded-lg bg-white text-gray-700 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-85 shadow-sm transition-all"
+                          placeholder="Search symbol or NET type"
+                          className={`pl-9 ${netSearchQuery ? 'pr-16' : 'pr-9'} py-1.5 text-xs border border-indigo-200 rounded-lg bg-white text-gray-700 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-85 shadow-sm transition-all`}
                         />
-                        <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                        {netSearchQuery && (
-                          <button onClick={() => { setNetSearchQuery(''); setNetShowSuggestions(false) }} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                          {netSearchQuery && (
+                            <button
+                              onClick={() => { setNetSearchQuery(''); setNetActiveSearch(''); setNetCurrentPage(1) }}
+                              className="p-0.5 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
+                              title="Clear search"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                          )}
+                          <button
+                            onClick={handleNetSearchClick}
+                            className="p-1 rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                            title="Search"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 18 18">
+                              <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                              <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                            </svg>
                           </button>
-                        )}
-                        {netShowSuggestions && getNetSuggestions().length > 0 && (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-60 overflow-y-auto">
-                            {getNetSuggestions().map((s,i)=>(
-                              <button key={i} onClick={() => handleNetSuggestionClick(s)} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50">{s}</button>
-                            ))}
-                          </div>
-                        )}
+                        </div>
                       </div>
                       
                       {/* Card Filter */}
@@ -3288,29 +3277,12 @@ const PositionsPage = () => {
                     }`}>
                       <span>
                         {(serverClientNetTotals.profit || 0) >= 0 ? '▲ ' : '▼ '}
-                        {formatNumber(Math.abs(serverClientNetTotals.profit || 0), 2)}
+                        {formatNumber(serverClientNetTotals.profit || 0, 2)}
                       </span>
                     </div>
                   </div>
                 )}
-                {clientNetCardsVisible.totalLogins && (
-                  <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
-                      <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Total Logins</span>
-                      <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
-                        <img 
-                          src={getCardIcon('Total Logins')} 
-                          alt="Total Logins"
-                          style={{ width: '100%', height: '100%' }}
-                          onError={(e) => { e.target.style.display = 'none' }}
-                        />
-                      </div>
-                    </div>
-                    <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
-                      <span>{new Set(clientNetFilteredPositions.map(r=>r.login)).size}</span>
-                    </div>
-                  </div>
-                )}
+
               </div>
 
               {/* Client NET Table */}
@@ -3321,28 +3293,39 @@ const PositionsPage = () => {
                   <div className="flex items-center flex-wrap gap-3">
                     {/* Client NET search at extreme left */}
                     <div className="relative" ref={clientNetSearchRef}>
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9CA3AF] pointer-events-none" fill="none" viewBox="0 0 18 18">
+                        <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                        <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
                       <input
                         type="text"
                         value={clientNetSearchQuery}
-                        onChange={(e)=>{ setClientNetSearchQuery(e.target.value); setClientNetShowSuggestions(true); setClientNetCurrentPage(1) }}
-                        onFocus={()=>setClientNetShowSuggestions(true)}
+                        onChange={(e) => setClientNetSearchQuery(e.target.value)}
                         onKeyDown={handleClientNetSearchKeyDown}
-                        placeholder="Search login, symbol or NET type..."
-                        className="pl-9 pr-9 py-1.5 text-xs border border-indigo-200 rounded-lg bg-white text-gray-700 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-56 shadow-sm transition-all"
+                        placeholder="Search login, symbol or NET"
+                        className={`pl-9 ${clientNetSearchQuery ? 'pr-16' : 'pr-9'} py-1.5 text-xs border border-indigo-200 rounded-lg bg-white text-gray-700 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-56 shadow-sm transition-all`}
                       />
-                      <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                      {clientNetSearchQuery && (
-                        <button onClick={()=>{ setClientNetSearchQuery(''); setClientNetShowSuggestions(false) }} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        {clientNetSearchQuery && (
+                          <button
+                            onClick={() => { setClientNetSearchQuery(''); setClientNetActiveSearch(''); setClientNetCurrentPage(1) }}
+                            className="p-0.5 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
+                            title="Clear search"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
+                        )}
+                        <button
+                          onClick={handleClientNetSearchClick}
+                          className="p-1 rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                          title="Search"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 18 18">
+                            <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                            <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                          </svg>
                         </button>
-                      )}
-                      {clientNetShowSuggestions && getClientNetSuggestions().length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 max-h-60 overflow-y-auto">
-                          {getClientNetSuggestions().map((s,i)=>(
-                            <button key={i} onClick={()=>handleClientNetSuggestionClick(s)} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50">{s}</button>
-                          ))}
-                        </div>
-                      )}
+                      </div>
                     </div>
                     
                     {/* Card Filter next to search */}
@@ -3691,39 +3674,45 @@ const PositionsPage = () => {
                 <div className="flex items-center gap-2 flex-1">
                   {/* Search Bar */}
                   <div className="relative flex-1 max-w-md" ref={searchRef}>
-                    <button
-                      onClick={handleSearchClick}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-200 text-[#9CA3AF] hover:text-[#4B5563] transition-colors z-10"
-                      title="Search"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 18 18">
-                        <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
-                        <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      </svg>
-                    </button>
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" fill="none" viewBox="0 0 18 18">
+                      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyDown={handleSearchKeyDown}
                       placeholder="Search"
-                      className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className={`w-full h-10 pl-10 ${searchQuery ? 'pr-20' : 'pr-10'} text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all`}
                     />
-                    {searchQuery && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                      {searchQuery && (
+                        <button
+                          onClick={() => {
+                            setSearchQuery('')
+                            setActiveSearch('')
+                            setCurrentPage(1)
+                          }}
+                          className="p-1 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
+                          title="Clear search"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
                       <button
-                        onClick={() => {
-                          setSearchQuery('')
-                          setActiveSearch('')
-                          setCurrentPage(1)
-                        }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
-                        title="Clear search"
+                        onClick={handleSearchClick}
+                        className="p-1 rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                        title="Search"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 18 18">
+                          <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                          <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                         </svg>
                       </button>
-                    )}
+                    </div>
                   </div>
                   
                   {/* Columns Button (icon only) */}
