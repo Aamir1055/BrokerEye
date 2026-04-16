@@ -290,6 +290,7 @@ const PositionsPage = () => {
   
   // Search state for ALL positions view
   const [searchQuery, setSearchQuery] = useState('')
+  const [activeSearch, setActiveSearch] = useState('') // only sent to API on Enter or search icon click
   
   // Pagination states for ALL positions view
   const [currentPage, setCurrentPage] = useState(1)
@@ -567,8 +568,8 @@ const PositionsPage = () => {
           sortBy: sortColumn || 'timeCreate',
           sortOrder: sortDirection || 'desc'
         }
-        if (searchQuery.trim()) {
-          params.search = searchQuery.trim()
+        if (activeSearch.trim()) {
+          params.search = activeSearch.trim()
         }
         const response = await brokerAPI.searchPositions(params)
         if (isCancelled) return
@@ -621,7 +622,7 @@ const PositionsPage = () => {
         flashTimeouts.current.clear()
       } catch {}
     }
-  }, [isAuthenticated, currentPage, itemsPerPage, sortColumn, sortDirection, searchQuery])
+  }, [isAuthenticated, currentPage, itemsPerPage, sortColumn, sortDirection, activeSearch])
 
   // REST polling for NET positions (netPosition: true) when NET tab is active
   useEffect(() => {
@@ -1204,8 +1205,14 @@ const PositionsPage = () => {
   
   const handleSearchKeyDown = (e) => {
     if (e.key === 'Enter') {
+      setActiveSearch(searchQuery.trim())
       setCurrentPage(1)
     }
+  }
+
+  const handleSearchClick = () => {
+    setActiveSearch(searchQuery.trim())
+    setCurrentPage(1)
   }
 
   // Sorting function with type detection
@@ -3684,17 +3691,20 @@ const PositionsPage = () => {
                 <div className="flex items-center gap-2 flex-1">
                   {/* Search Bar */}
                   <div className="relative flex-1 max-w-md" ref={searchRef}>
-                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 18 18">
-                      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
+                    <button
+                      onClick={handleSearchClick}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-200 text-[#9CA3AF] hover:text-[#4B5563] transition-colors z-10"
+                      title="Search"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 18 18">
+                        <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                        <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
+                    </button>
                     <input
                       type="text"
                       value={searchQuery}
-                      onChange={(e) => {
-                        setSearchQuery(e.target.value)
-                        setCurrentPage(1)
-                      }}
+                      onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyDown={handleSearchKeyDown}
                       placeholder="Search"
                       className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
@@ -3703,6 +3713,8 @@ const PositionsPage = () => {
                       <button
                         onClick={() => {
                           setSearchQuery('')
+                          setActiveSearch('')
+                          setCurrentPage(1)
                         }}
                         className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
                         title="Clear search"
