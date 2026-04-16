@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState, useMemo, Fragment, useDeferredValue } from 'react'
+import { useEffect, useRef, useState, useMemo, useCallback, Fragment, useDeferredValue } from 'react'
 import { useData } from '../contexts/DataContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useGroups } from '../contexts/GroupContext'
 import { useIB } from '../contexts/IBContext'
-import websocketService from '../services/websocket'
+import { brokerAPI } from '../services/api'
 import Sidebar from '../components/Sidebar'
 import WebSocketIndicator from '../components/WebSocketIndicator'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -33,11 +33,27 @@ const PositionsPage = () => {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Use cached data from DataContext
-  const { positions: cachedPositions, orders: cachedOrders, fetchPositions, loading, connectionState, rawClients } = useData()
+  // Use cached data from DataContext (orders, clients etc.)
+  const { orders: cachedOrders, loading, connectionState, rawClients } = useData()
   const { isAuthenticated } = useAuth()
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
+
+  // --- Positions are fetched via REST polling (1s) when this page is active ---
+  const [polledPositions, setPolledPositions] = useState([])
+  const [serverTotalPositions, setServerTotalPositions] = useState(0)
+  // Server-provided totals across ALL positions (not just current page)
+  const [serverTotals, setServerTotals] = useState({ profit: 0, storage: 0, volume: 0 })
+
+  // --- NET positions fetched via REST polling (1s) when NET tab is active ---
+  const [polledNetPositions, setPolledNetPositions] = useState([])
+  const [serverTotalNetPositions, setServerTotalNetPositions] = useState(0)
+  const [serverNetTotals, setServerNetTotals] = useState({ profit: 0, storage: 0, volume: 0 })
+
+  // --- Client NET positions fetched via REST polling (1s) when Client NET tab is active ---
+  const [polledClientNetPositions, setPolledClientNetPositions] = useState([])
+  const [serverTotalClientNetPositions, setServerTotalClientNetPositions] = useState(0)
+  const [serverClientNetTotals, setServerClientNetTotals] = useState({ profit: 0, storage: 0, volume: 0 })
   
   // Build client currency map from rawClients for USC detection
   const clientCurrencyMap = useMemo(() => {
@@ -53,9 +69,9 @@ const PositionsPage = () => {
   
   // Apply USD normalization to all positions automatically with USC handling
   const displayPositions = useMemo(() => {
-    if (!cachedPositions || cachedPositions.length === 0) return cachedPositions
-    return normalizePositions(cachedPositions, clientCurrencyMap)
-  }, [cachedPositions, clientCurrencyMap])
+    if (!polledPositions || polledPositions.length === 0) return polledPositions
+    return normalizePositions(polledPositions, clientCurrencyMap)
+  }, [polledPositions, clientCurrencyMap])
   
   // Track if component is mounted to prevent updates after unmount
   const isMountedRef = useRef(true)
@@ -137,6 +153,17 @@ const PositionsPage = () => {
   const [clientNetShowSuggestions, setClientNetShowSuggestions] = useState(false)
   const clientNetSearchRef = useRef(null)
   const clientNetCardFilterRef = useRef(null)
+  // Client NET pagination
+  const [clientNetCurrentPage, setClientNetCurrentPage] = useState(1)
+  const [clientNetItemsPerPage, setClientNetItemsPerPage] = useState(() => {
+    try {
+      const saved = localStorage.getItem('client_net_items_per_page')
+      if (saved) return saved === 'All' ? 'All' : parseInt(saved)
+      return 50
+    } catch {
+      return 50
+    }
+  })
   
   // Column visibility states
   const [showColumnSelector, setShowColumnSelector] = useState(false)
@@ -275,7 +302,7 @@ const PositionsPage = () => {
   
   // NET positions pagination
   const [netCurrentPage, setNetCurrentPage] = useState(1)
-  const [netItemsPerPage, setNetItemsPerPage] = useState(() => isMobile ? 12 : 25)
+  const [netItemsPerPage, setNetItemsPerPage] = useState(50)
   
   // Client NET toggle
   const [showClientNet, setShowClientNet] = useState(false)
@@ -289,9 +316,6 @@ const PositionsPage = () => {
   
   // Search ref for ALL positions view
   const searchRef = useRef(null)
-  
-  // Search suggestions state for ALL positions view
-  const [showSuggestions, setShowSuggestions] = useState(false)
   
   // Flash timeouts for row highlighting
   const flashTimeouts = useRef(new Map())
@@ -311,7 +335,7 @@ const PositionsPage = () => {
     const isTimeColumn = columnKey === 'timeUpdate'
     const originalTimestamps = new Map() // Store original timestamps for sorting
     
-    cachedPositions.forEach(position => {
+    polledPositions.forEach(position => {
       let value = position[columnKey]
       
       // Format timeUpdate (epoch) to dd/mm/yyyy hh:mm:ss for display in filter
@@ -530,13 +554,64 @@ const PositionsPage = () => {
       console.log('[Positions] ⚠️ Not authenticated, skipping fetch')
       return
     }
-    if (!hasInitialLoad.current) {
-      hasInitialLoad.current = true
-      console.log('[Positions] 🚀 Initial load - fetching positions')
-      fetchPositions()
+
+    let timer = null
+    let isCancelled = false
+
+    const poll = async () => {
+      if (isCancelled) return
+      try {
+        const params = {
+          page: currentPage,
+          limit: itemsPerPage,
+          sortBy: sortColumn || 'timeCreate',
+          sortOrder: sortDirection || 'desc'
+        }
+        if (searchQuery.trim()) {
+          params.search = searchQuery.trim()
+        }
+        const response = await brokerAPI.searchPositions(params)
+        if (isCancelled) return
+        const data = response?.data?.positions || response?.positions || []
+        const total = response?.data?.total || response?.total || 0
+        const totals = response?.data?.totals || response?.totals || null
+        if (Array.isArray(data)) {
+          setPolledPositions(data)
+          setServerTotalPositions(total)
+          if (totals) setServerTotals(totals)
+        }
+      } catch (err) {
+        if (!isCancelled) {
+          console.warn('[Positions] Polling error:', err?.message)
+        }
+      }
     }
 
+    const startPolling = () => {
+      if (timer) return
+      poll()
+      timer = setInterval(poll, 1000)
+    }
+
+    const stopPolling = () => {
+      if (timer) {
+        clearInterval(timer)
+        timer = null
+      }
+    }
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') startPolling()
+      else stopPolling()
+    }
+
+    if (document.visibilityState === 'visible') startPolling()
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
     return () => {
+      isCancelled = true
+      stopPolling()
+      document.removeEventListener('visibilitychange', onVisibilityChange)
       // Mark component as unmounted to prevent state updates
       isMountedRef.current = false
       
@@ -546,13 +621,158 @@ const PositionsPage = () => {
         flashTimeouts.current.clear()
       } catch {}
     }
-  },  [isAuthenticated])
+  }, [isAuthenticated, currentPage, itemsPerPage, sortColumn, sortDirection, searchQuery])
 
-  // Track position changes for flash indicators (WebSocket updates)
+  // REST polling for NET positions (netPosition: true) when NET tab is active
+  useEffect(() => {
+    if (!isAuthenticated || !showNetPositions) {
+      return
+    }
+
+    let timer = null
+    let isCancelled = false
+
+    const poll = async () => {
+      if (isCancelled) return
+      try {
+        const params = {
+          page: netCurrentPage,
+          limit: netItemsPerPage === 'All' ? 10000 : netItemsPerPage,
+          netPosition: true,
+          sortBy: netSortColumn || 'netVolume',
+          sortOrder: netSortDirection || 'desc'
+        }
+        if (groupByBaseSymbol) params.groupBaseSymbol = true
+        if (netSearchQuery.trim()) params.search = netSearchQuery.trim()
+
+        const response = await brokerAPI.searchPositions(params)
+        if (isCancelled) return
+        const data = response?.data?.positions || response?.positions || []
+        const total = response?.data?.total || response?.total || 0
+        const totals = response?.data?.totals || response?.totals || null
+        if (Array.isArray(data)) {
+          if (totals) setServerNetTotals(totals)
+          // Map API fields to UI field names
+          const mapped = data.map(item => ({
+            symbol: item.symbol,
+            netType: item.action === 'BUY' ? 'Buy' : item.action === 'SELL' ? 'Sell' : (item.action || 'Flat'),
+            netVolume: item.netVolume || 0,
+            avgPrice: item.avgPrice || 0,
+            totalProfit: item.totalProfit || 0,
+            totalStorage: item.totalStorage || 0,
+            totalCommission: item.totalCommission || 0,
+            loginCount: item.clientCount || 0,
+            totalPositions: item.positionCount || 0,
+            variantCount: item.variants?.length || 1,
+            variants: (item.variants || []).map(v => ({
+              exactSymbol: v.symbol || v.exactSymbol,
+              netType: v.action === 'BUY' ? 'Buy' : v.action === 'SELL' ? 'Sell' : (v.action || 'Flat'),
+              netVolume: v.netVolume || 0,
+              avgPrice: v.avgPrice || 0,
+              totalProfit: v.totalProfit || 0,
+              totalStorage: v.totalStorage || 0,
+              totalCommission: v.totalCommission || 0
+            }))
+          }))
+          setPolledNetPositions(mapped)
+          setServerTotalNetPositions(total)
+        }
+      } catch (err) {
+        if (!isCancelled) console.warn('[NET Positions] Polling error:', err?.message)
+      }
+    }
+
+    const startPolling = () => { if (timer) return; poll(); timer = setInterval(poll, 1000) }
+    const stopPolling = () => { if (timer) { clearInterval(timer); timer = null } }
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') startPolling()
+      else stopPolling()
+    }
+    if (document.visibilityState === 'visible') startPolling()
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    return () => {
+      isCancelled = true
+      stopPolling()
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }, [isAuthenticated, showNetPositions, netCurrentPage, netItemsPerPage, netSortColumn, netSortDirection, netSearchQuery, groupByBaseSymbol])
+
+  // REST polling for Client NET positions (clientNet: true) when Client NET tab is active
+  useEffect(() => {
+    if (!isAuthenticated || !showClientNet) {
+      return
+    }
+
+    let timer = null
+    let isCancelled = false
+
+    const poll = async () => {
+      if (isCancelled) return
+      try {
+        const params = {
+          page: clientNetCurrentPage,
+          limit: clientNetItemsPerPage === 'All' ? 10000 : clientNetItemsPerPage,
+          clientNet: true,
+          sortBy: clientNetSortColumn || 'login',
+          sortOrder: clientNetSortDirection || 'asc'
+        }
+        if (clientNetSearchQuery.trim()) params.search = clientNetSearchQuery.trim()
+
+        const response = await brokerAPI.searchPositions(params)
+        if (isCancelled) return
+        const data = response?.data?.positions || response?.positions || []
+        const total = response?.data?.total || response?.total || 0
+        const totals = response?.data?.totals || response?.totals || null
+        if (Array.isArray(data)) {
+          if (totals) setServerClientNetTotals(totals)
+          // Map API fields to UI field names
+          const mapped = data.map(item => ({
+            login: item.login,
+            symbol: item.symbol,
+            netType: item.action === 'BUY' ? 'Buy' : item.action === 'SELL' ? 'Sell' : (item.action || 'Flat'),
+            netVolume: item.netVolume || 0,
+            avgPrice: item.avgPrice || 0,
+            totalProfit: item.totalProfit || 0,
+            totalPositions: item.positionCount || 0,
+            variantCount: item.variants?.length || 1,
+            variants: (item.variants || []).map(v => ({
+              exactSymbol: v.symbol || v.exactSymbol,
+              netType: v.action === 'BUY' ? 'Buy' : v.action === 'SELL' ? 'Sell' : (v.action || 'Flat'),
+              netVolume: v.netVolume || 0,
+              avgPrice: v.avgPrice || 0,
+              totalProfit: v.totalProfit || 0
+            }))
+          }))
+          setPolledClientNetPositions(mapped)
+          setServerTotalClientNetPositions(total)
+        }
+      } catch (err) {
+        if (!isCancelled) console.warn('[Client NET Positions] Polling error:', err?.message)
+      }
+    }
+
+    const startPolling = () => { if (timer) return; poll(); timer = setInterval(poll, 1000) }
+    const stopPolling = () => { if (timer) { clearInterval(timer); timer = null } }
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') startPolling()
+      else stopPolling()
+    }
+    if (document.visibilityState === 'visible') startPolling()
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    return () => {
+      isCancelled = true
+      stopPolling()
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }, [isAuthenticated, showClientNet, clientNetCurrentPage, clientNetItemsPerPage, clientNetSortColumn, clientNetSortDirection, clientNetSearchQuery])
+
+  // Track position changes for flash indicators (polling updates)
   useEffect(() => { if (!isAuthenticated) return;
     
-    if (!hasInitialLoad.current || cachedPositions.length === 0) {
-      prevPositionsRef.current = cachedPositions
+    if (polledPositions.length === 0) {
+      prevPositionsRef.current = polledPositions
       return
     }
 
@@ -561,9 +781,9 @@ const PositionsPage = () => {
 
     let newCount = 0
     let updateCount = 0
-    let deletedCount = prevPositions.length - cachedPositions.length
+    let deletedCount = prevPositions.length - polledPositions.length
 
-    cachedPositions.forEach(pos => {
+    polledPositions.forEach(pos => {
       const key = getPosKey(pos)
       if (!key) return
 
@@ -589,16 +809,14 @@ const PositionsPage = () => {
       setIsRefreshing(false)
     }
 
-    prevPositionsRef.current = cachedPositions
-  }, [cachedPositions, isRefreshing])
+    prevPositionsRef.current = polledPositions
+  }, [polledPositions, isRefreshing])
   
   // Close suggestions when clicking outside
   useEffect(() => { if (!isAuthenticated) return;
     const handleClickOutside = (event) => {
       if (!isMountedRef.current) return
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setShowSuggestions(false)
-      }
+
       if (columnSelectorRef.current && !columnSelectorRef.current.contains(event.target)) {
         setShowColumnSelector(false)
       }
@@ -912,7 +1130,7 @@ const PositionsPage = () => {
   // Generate NET Position page size options based on data count
   const generateNetPageSizeOptions = () => {
     const base = [25, 50, 100, 200]
-    const totalCount = netFilteredPositions.length
+    const totalCount = serverTotalNetPositions
     
     // Only include options that are less than or equal to total count
     const validOptions = base.filter(size => size < totalCount)
@@ -933,7 +1151,7 @@ const PositionsPage = () => {
   // Generate Client NET page size options based on data count
   const generateClientNetPageSizeOptions = () => {
     const base = [25, 50, 100, 200]
-    const totalCount = clientNetFilteredPositions.length
+    const totalCount = serverTotalClientNetPositions
     
     // Only include options that are less than or equal to total count
     const validOptions = base.filter(size => size < totalCount)
@@ -984,15 +1202,9 @@ const PositionsPage = () => {
     })
   }
   
-  const handleSuggestionClick = (suggestion) => {
-    const value = suggestion.split(': ')[1]
-    setSearchQuery(value)
-    setShowSuggestions(false)
-  }
-  
   const handleSearchKeyDown = (e) => {
     if (e.key === 'Enter') {
-      setShowSuggestions(false)
+      setCurrentPage(1)
     }
   }
 
@@ -1033,27 +1245,25 @@ const PositionsPage = () => {
   // Defer heavy list processing so route changes remain responsive
   const deferredPositions = useDeferredValue(displayPositions)
 
-  // Memoize filtered and sorted positions to prevent blocking on navigation
+  // Memoize filtered positions — server already handles pagination/sort/search,
+  // but we still apply IB, group, date, and column filters client-side.
   const { sortedPositions, ibFilteredPositions } = useMemo(() => {
-    // Return empty arrays if not authenticated to avoid unnecessary processing
     if (!isAuthenticated) {
       return { sortedPositions: [], ibFilteredPositions: [] }
     }
     
-    const searchedPositions = searchPositions(deferredPositions)
+    // Server already did search + sort + pagination — start from the page of data we got
+    let ibFiltered = [...deferredPositions]
     
     // Apply IB filter first (cumulative order: IB -> Group)
-    let ibFiltered = filterByActiveIB(searchedPositions, 'login')
+    ibFiltered = filterByActiveIB(ibFiltered, 'login')
     
     // Apply group filter on top of IB filter
-    let groupFilteredPositions = filterByActiveGroup(ibFiltered, 'login', 'positions')
-    
-    // Continue with groupFilteredPositions as ibFiltered for consistency
-    ibFiltered = groupFilteredPositions
+    ibFiltered = filterByActiveGroup(ibFiltered, 'login', 'positions')
     
     // Apply date filter if selected
     if (dateFilter) {
-      const now = Date.now() / 1000 // Current time in seconds
+      const now = Date.now() / 1000
       const daysInSeconds = dateFilter * 24 * 60 * 60
       const cutoffTime = now - daysInSeconds
       
@@ -1066,43 +1276,33 @@ const PositionsPage = () => {
     // Apply column filters
     Object.entries(columnFilters).forEach(([columnKey, values]) => {
       if (columnKey.endsWith('_number')) {
-        // Number filter
         const actualColumnKey = columnKey.replace('_number', '')
         ibFiltered = ibFiltered.filter(position => {
           const positionValue = position[actualColumnKey]
           return matchesNumberFilter(positionValue, values)
         })
       } else if (values && values.length > 0) {
-        // Regular checkbox filter
         ibFiltered = ibFiltered.filter(position => {
           let positionValue = position[columnKey]
-          
-          // For timeUpdate, format to match displayed format in filter
           if (columnKey === 'timeUpdate' && positionValue) {
             const formatted = formatTime(positionValue)
             if (formatted && formatted !== '-') {
               positionValue = formatted
             }
           }
-          
           return values.includes(positionValue)
         })
       }
     })
     
-    const sorted = sortPositions(ibFiltered)
-    
-    return { sortedPositions: sorted, ibFilteredPositions: ibFiltered }
-  }, [deferredPositions, searchQuery, columnFilters, sortColumn, sortDirection, isAuthenticated, filterByActiveGroup, activeGroupFilters, filterByActiveIB, selectedIB, ibMT5Accounts, dateFilter])
+    return { sortedPositions: ibFiltered, ibFilteredPositions: ibFiltered }
+  }, [deferredPositions, columnFilters, isAuthenticated, filterByActiveGroup, activeGroupFilters, filterByActiveIB, selectedIB, ibMT5Accounts, dateFilter])
 
-  // Memoized summary statistics - based on filtered positions
+  // Memoized summary statistics - use server-provided totals across ALL positions
   const summaryStats = useMemo(() => {
-    const totalPositions = ibFilteredPositions.length
-    // Invert profit values to show broker perspective (client loss = broker gain)
-    const totalFloatingProfit = -ibFilteredPositions.reduce((sum, p) => {
-      const val = p.profit || 0
-      return sum + (/[cC]$/.test(String(p.symbol || '')) ? val / 100 : val)
-    }, 0)
+    const totalPositions = serverTotalPositions
+    // Invert profit to show broker perspective (client loss = broker gain)
+    const totalFloatingProfit = -(serverTotals.profit || 0)
     const totalFloatingProfitPercentage = -ibFilteredPositions.reduce((sum, p) => sum + (p.profit_percentage || 0), 0)
     const uniqueLogins = new Set(ibFilteredPositions.map(p => p.login)).size
     const uniqueSymbols = new Set(ibFilteredPositions.map(p => p.symbol)).size
@@ -1114,35 +1314,7 @@ const PositionsPage = () => {
       uniqueLogins,
       uniqueSymbols
     }
-  }, [ibFilteredPositions])
-  
-  // Get search suggestions
-  const getSuggestions = () => {
-    if (!searchQuery.trim() || searchQuery.length < 1) {
-      return []
-    }
-    
-    const query = searchQuery.toLowerCase().trim()
-    const suggestions = new Set()
-    
-    sortedPositions.forEach(position => {
-      const login = String(position.login || '')
-      const symbol = String(position.symbol || '')
-      const positionId = String(position.position || '')
-      
-      if (login.toLowerCase().includes(query)) {
-        suggestions.add(`Login: ${login}`)
-      }
-      if (symbol.toLowerCase().includes(query) && symbol) {
-        suggestions.add(`Symbol: ${symbol}`)
-      }
-      if (positionId.toLowerCase().includes(query)) {
-        suggestions.add(`Position: ${positionId}`)
-      }
-    })
-    
-    return Array.from(suggestions).slice(0, 10)
-  }
+  }, [ibFilteredPositions, serverTotalPositions, serverTotals])
   
   // Handle column header click for sorting
   const handleSort = (columnKey) => {
@@ -1156,11 +1328,9 @@ const PositionsPage = () => {
     }
   }
   
-  // Pagination logic
-  const totalPages = Math.ceil(sortedPositions.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const displayedPositions = sortedPositions.slice(startIndex, endIndex)
+  // Pagination — server handles page/limit, we use serverTotalPositions for total pages
+  const totalPages = Math.ceil(serverTotalPositions / itemsPerPage)
+  const displayedPositions = sortedPositions // server already paginated
   
   // Reset to page 1 when items per page changes
   useEffect(() => { if (!isAuthenticated) return;
@@ -1199,11 +1369,8 @@ const PositionsPage = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showFilterDropdown, showNumberFilterDropdown])
   
-  // Calculate NET positions using useMemo - use cachedPositions for all data
-  const netPositionsData = useMemo(() => {
-    if (!showNetPositions) return []
-    return calculateGlobalNetPositions(deferredPositions)
-  }, [showNetPositions, deferredPositions, groupByBaseSymbol])
+  // NET positions data — fetched from server via polling (netPosition: true)
+  const netPositionsData = polledNetPositions
 
   // NET suggestions
   const getNetSuggestions = () => {
@@ -1234,49 +1401,13 @@ const PositionsPage = () => {
   }
 
   const netFilteredPositions = useMemo(() => {
-    let filtered = netPositionsData
-    
-    // Apply search filter
-    if (netSearchQuery.trim()) {
-      const q = netSearchQuery.toLowerCase().trim()
-      filtered = filtered.filter(row =>
-        String(row.symbol || '').toLowerCase().includes(q) || String(row.netType || '').toLowerCase().includes(q)
-      )
-    }
-    
-    // Apply sorting
-    if (netSortColumn) {
-      filtered = [...filtered].sort((a, b) => {
-        const aVal = a[netSortColumn]
-        const bVal = b[netSortColumn]
-        
-        // Handle null/undefined
-        if (aVal == null && bVal == null) return 0
-        if (aVal == null) return 1
-        if (bVal == null) return -1
-        
-        // Numeric comparison
-        const aNum = Number(aVal)
-        const bNum = Number(bVal)
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-          return netSortDirection === 'asc' ? aNum - bNum : bNum - aNum
-        }
-        
-        // String comparison
-        const aStr = String(aVal).toLowerCase()
-        const bStr = String(bVal).toLowerCase()
-        return netSortDirection === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr)
-      })
-    }
-    
-    return filtered
-  }, [netSearchQuery, netPositionsData, netSortColumn, netSortDirection])
+    // Server handles search and sort — just return server data directly
+    return netPositionsData
+  }, [netPositionsData])
 
-  // Pagination logic specific to NET module
-  const netTotalPages = netItemsPerPage === 'All' ? 1 : Math.ceil(netFilteredPositions.length / netItemsPerPage)
-  const netStartIndex = netItemsPerPage === 'All' ? 0 : (netCurrentPage - 1) * netItemsPerPage
-  const netEndIndex = netItemsPerPage === 'All' ? netFilteredPositions.length : netStartIndex + netItemsPerPage
-  const netDisplayedPositions = netFilteredPositions.slice(netStartIndex, netEndIndex)
+  // Pagination — server handles page/limit for NET positions
+  const netTotalPages = netItemsPerPage === 'All' ? 1 : Math.ceil(serverTotalNetPositions / (netItemsPerPage || 50))
+  const netDisplayedPositions = netFilteredPositions // server already paginated
   useEffect(() => { if (!isAuthenticated) return; setNetCurrentPage(1) }, [netItemsPerPage])
   const handleNetPageChange = (p) => { setNetCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }
   const handleNetItemsPerPageChange = (v) => {
@@ -1287,103 +1418,9 @@ const PositionsPage = () => {
   }
 
   // Calculate Client NET positions (group first by login then by symbol)
-  const clientNetPositionsData = useMemo(() => {
-    if (!showClientNet) return []
-    if (!cachedPositions || cachedPositions.length === 0) return []
+  // Client NET positions data — fetched from server via polling (clientNet: true)
+  const clientNetPositionsData = polledClientNetPositions
 
-    // Map: login -> symbolKey -> aggregation buckets
-    const loginMap = new Map()
-    const getBaseSymbol = (s) => {
-      if (!s || typeof s !== 'string') return s
-      const parts = s.split(/[\.\-]/)
-      return parts[0] || s
-    }
-
-    cachedPositions.forEach(pos => {
-      const login = pos.login
-      const symbol = pos.symbol
-      if (login == null || !symbol) return
-      if (!loginMap.has(login)) loginMap.set(login, new Map())
-      const symbolKey = groupByBaseSymbol ? getBaseSymbol(symbol) : symbol
-      const symMap = loginMap.get(login)
-      if (!symMap.has(symbolKey)) {
-        symMap.set(symbolKey, {
-          buyPositions: [],
-          sellPositions: [],
-          variantMap: new Map() // exact -> {buyPositions:[], sellPositions:[]}
-        })
-      }
-      const bucket = symMap.get(symbolKey)
-
-      // Cent scaling logic reused (symbols ending with c/C)
-      const isCent = /[cC]$/.test(symbol)
-      const adj = isCent ? { ...pos, profit: (pos.profit||0)/100, storage:(pos.storage||0)/100, commission:(pos.commission||0)/100 } : pos
-
-      let actionNorm = null
-      const raw = adj.action
-      if (raw === 0 || raw === '0') actionNorm = 'buy'
-      else if (raw === 1 || raw === '1') actionNorm = 'sell'
-      else if (typeof raw === 'string') actionNorm = raw.toLowerCase()
-
-      if (actionNorm === 'buy') bucket.buyPositions.push(adj)
-      else if (actionNorm === 'sell') bucket.sellPositions.push(adj)
-
-      if (groupByBaseSymbol) {
-        const exact = symbol
-        if (!bucket.variantMap.has(exact)) bucket.variantMap.set(exact, { buyPositions: [], sellPositions: [] })
-        const v = bucket.variantMap.get(exact)
-        if (actionNorm === 'buy') v.buyPositions.push(adj)
-        else if (actionNorm === 'sell') v.sellPositions.push(adj)
-      }
-    })
-
-    const rows = []
-    loginMap.forEach((symMap, login) => {
-      symMap.forEach((bucket, key) => {
-        const buyVol = bucket.buyPositions.reduce((s,p)=>s+(p.volume||0),0)
-        const sellVol = bucket.sellPositions.reduce((s,p)=>s+(p.volume||0),0)
-        const netVol = buyVol - sellVol
-        if (netVol === 0) return
-        let tw=0,tv=0,tp=0
-        const use = netVol>0 ? bucket.buyPositions : bucket.sellPositions
-        use.forEach(p=>{const v=p.volume||0; const pr=p.priceOpen||0; tw+=pr*v; tv+=v; tp+=p.profit||0})
-        const avg = tv>0? tw/tv : 0
-        const netType = netVol>0? 'Buy':'Sell' // fixed: when more buy volume, show Buy
-        let variantCount=1, variants=[]
-        if (groupByBaseSymbol){
-          variantCount = bucket.variantMap.size
-          variants = Array.from(bucket.variantMap.entries()).map(([exact,data]) => {
-            const bv = data.buyPositions.reduce((s,p)=>s+(p.volume||0),0)
-            const sv = data.sellPositions.reduce((s,p)=>s+(p.volume||0),0)
-            const nv = bv - sv
-            if (nv===0) return null
-            let tw2=0,tv2=0,tp2=0
-            const use2 = nv>0? data.buyPositions : data.sellPositions
-            use2.forEach(p=>{const v=p.volume||0; const pr=p.priceOpen||0; tw2+=pr*v; tv2+=v; tp2+=p.profit||0})
-            const avg2 = tv2>0? tw2/tv2:0
-            return { exactSymbol: exact, netType: nv>0? 'Buy':'Sell', netVolume: Math.abs(nv), avgPrice: avg2, totalProfit: tp2 }
-          }).filter(Boolean)
-        }
-  // Add totalPositions count (buy + sell) so Client NET Positions column is populated
-  const totalPositions = bucket.buyPositions.length + bucket.sellPositions.length
-  rows.push({ login, symbol: key, netType, netVolume: Math.abs(netVol), avgPrice: avg, totalProfit: tp, totalPositions, variantCount, variants })
-      })
-    })
-    // Sort by login then volume desc for stability
-    return rows.sort((a,b)=> a.login === b.login ? b.netVolume - a.netVolume : String(a.login).localeCompare(String(b.login)))
-  }, [showClientNet, cachedPositions, groupByBaseSymbol])
-
-  // Client NET pagination
-  const [clientNetCurrentPage, setClientNetCurrentPage] = useState(1)
-  const [clientNetItemsPerPage, setClientNetItemsPerPage] = useState(() => {
-    try {
-      const saved = localStorage.getItem('client_net_items_per_page')
-      if (saved) return saved === 'All' ? 'All' : parseInt(saved)
-      return 100
-    } catch {
-      return 100
-    }
-  })
   // Client NET search suggestions and filtering
   const getClientNetSuggestions = () => {
     if (!clientNetSearchQuery.trim()) return []
@@ -1414,50 +1451,13 @@ const PositionsPage = () => {
   }
 
   const clientNetFilteredPositions = useMemo(() => {
-    let filtered = clientNetPositionsData
-    
-    // Apply search filter
-    if (clientNetSearchQuery.trim()) {
-      const q = clientNetSearchQuery.toLowerCase().trim()
-      filtered = filtered.filter(row =>
-        String(row.login || '').toLowerCase().includes(q) ||
-        String(row.symbol || '').toLowerCase().includes(q) ||
-        String(row.netType || '').toLowerCase().includes(q)
-      )
-    }
-    
-    // Apply sorting
-    if (clientNetSortColumn) {
-      filtered = [...filtered].sort((a, b) => {
-        const aVal = a[clientNetSortColumn]
-        const bVal = b[clientNetSortColumn]
-        
-        // Handle null/undefined
-        if (aVal == null && bVal == null) return 0
-        if (aVal == null) return 1
-        if (bVal == null) return -1
-        
-        // Numeric comparison
-        const aNum = Number(aVal)
-        const bNum = Number(bVal)
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-          return clientNetSortDirection === 'asc' ? aNum - bNum : bNum - aNum
-        }
-        
-        // String comparison
-        const aStr = String(aVal).toLowerCase()
-        const bStr = String(bVal).toLowerCase()
-        return clientNetSortDirection === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr)
-      })
-    }
-    
-    return filtered
-  }, [clientNetSearchQuery, clientNetPositionsData, clientNetSortColumn, clientNetSortDirection])
+    // Server handles search and sort — just return server data directly
+    return clientNetPositionsData
+  }, [clientNetPositionsData])
 
-  const clientNetTotalPages = clientNetItemsPerPage === 'All' ? 1 : Math.ceil(clientNetFilteredPositions.length / clientNetItemsPerPage)
-  const clientNetStartIndex = clientNetItemsPerPage === 'All' ? 0 : (clientNetCurrentPage - 1) * clientNetItemsPerPage
-  const clientNetEndIndex = clientNetItemsPerPage === 'All' ? clientNetFilteredPositions.length : clientNetStartIndex + clientNetItemsPerPage
-  const clientNetDisplayedPositions = clientNetFilteredPositions.slice(clientNetStartIndex, clientNetEndIndex)
+  // Pagination — server handles page/limit for Client NET positions
+  const clientNetTotalPages = clientNetItemsPerPage === 'All' ? 1 : Math.ceil(serverTotalClientNetPositions / (clientNetItemsPerPage || 50))
+  const clientNetDisplayedPositions = clientNetFilteredPositions // server already paginated
   useEffect(() => { if (!isAuthenticated) return; setClientNetCurrentPage(1) }, [clientNetItemsPerPage])
   const handleClientNetPageChange = (p) => { setClientNetCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }
   const handleClientNetItemsPerPageChange = (v) => {
@@ -2290,7 +2290,9 @@ const PositionsPage = () => {
   }
 
   // Only show local loading inside cards/tables; keep the page chrome interactive
-  const isInitialPositionsLoading = loading.positions && (!cachedPositions || cachedPositions.length === 0)
+  const isInitialPositionsLoading = polledPositions.length === 0 && !serverTotalPositions
+  const isInitialNetLoading = polledNetPositions.length === 0 && !serverTotalNetPositions && showNetPositions
+  const isInitialClientNetLoading = polledClientNetPositions.length === 0 && !serverTotalClientNetPositions && showClientNet
 
   // Early return for mobile - render mobile component
   if (isMobile) {
@@ -2459,18 +2461,28 @@ const PositionsPage = () => {
               </button>
               
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (isRefreshing) return
-                  console.log('[Positions] Requesting fresh position snapshot from WebSocket...')
+                  console.log('[Positions] Requesting fresh positions from API...')
                   setIsRefreshing(true)
-                  websocketService.send({
-                    type: 'GET_POSITIONS',
-                    action: 'snapshot'
-                  })
-                  // Auto re-enable after 3 seconds as fallback
-                  setTimeout(() => {
-                    setIsRefreshing(false)
-                  }, 3000)
+                  try {
+                    const response = await brokerAPI.searchPositions({
+                      page: currentPage,
+                      limit: itemsPerPage,
+                      sortBy: sortColumn || 'timeCreate',
+                      sortOrder: sortDirection || 'desc',
+                      ...(searchQuery.trim() ? { search: searchQuery.trim() } : {})
+                    })
+                    const data = response?.data?.positions || response?.positions || []
+                    const total = response?.data?.total || response?.total || 0
+                    if (Array.isArray(data)) {
+                      setPolledPositions(data)
+                      setServerTotalPositions(total)
+                    }
+                  } catch (err) {
+                    console.error('[Positions] Refresh failed:', err)
+                  }
+                  setIsRefreshing(false)
                 }}
                 disabled={isRefreshing}
                 className={`h-8 w-8 rounded-md border shadow-sm flex items-center justify-center transition-all ${
@@ -2478,7 +2490,7 @@ const PositionsPage = () => {
                     ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50' 
                     : 'bg-white border-[#E5E7EB] hover:bg-gray-50 cursor-pointer'
                 }`}
-                title={isRefreshing ? "Refreshing..." : "Refresh positions from WebSocket"}
+                title={isRefreshing ? "Refreshing..." : "Refresh positions"}
               >
                 <svg 
                   className={`w-4 h-4 text-[#374151] ${isRefreshing ? 'animate-spin' : ''}`} 
@@ -2643,7 +2655,7 @@ const PositionsPage = () => {
                       </div>
                     </div>
                     <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
-                      <span>{netFilteredPositions.length}</span>
+                      <span>{serverTotalNetPositions}</span>
                       <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">SYM</span>
                     </div>
                   </div>
@@ -2662,7 +2674,7 @@ const PositionsPage = () => {
                       </div>
                     </div>
                     <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
-                      <span>{formatNumber(netFilteredPositions.reduce((s,p)=>s+p.netVolume,0),2)}</span>
+                      <span>{formatNumber(serverNetTotals.volume || 0,2)}</span>
                       <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">VOL</span>
                     </div>
                   </div>
@@ -2681,19 +2693,19 @@ const PositionsPage = () => {
                       </div>
                     </div>
                     <div className={`text-sm md:text-base font-bold flex items-center gap-1.5 leading-none ${
-                      netFilteredPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'
+                      (serverNetTotals.profit || 0) >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'
                     }`}>
-                      {netFilteredPositions.reduce((s,p)=>s+p.totalProfit,0) >= 0 && (
+                      {(serverNetTotals.profit || 0) >= 0 && (
                         <svg width="8" height="8" viewBox="0 0 10 10" className="md:w-[10px] md:h-[10px]">
                           <polygon points="5,0 10,10 0,10" fill="#16A34A"/>
                         </svg>
                       )}
-                      {netFilteredPositions.reduce((s,p)=>s+p.totalProfit,0) < 0 && (
+                      {(serverNetTotals.profit || 0) < 0 && (
                         <svg width="8" height="8" viewBox="0 0 10 10" style={{transform: 'rotate(180deg)'}} className="md:w-[10px] md:h-[10px]">
                           <polygon points="5,0 10,10 0,10" fill="#DC2626"/>
                         </svg>
                       )}
-                      <span>{formatNumber(Math.abs(netFilteredPositions.reduce((s,p)=>s+p.totalProfit,0)),2)}</span>
+                      <span>{formatNumber(Math.abs(serverNetTotals.profit || 0),2)}</span>
                       <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">USD</span>
                     </div>
                   </div>
@@ -2884,7 +2896,7 @@ const PositionsPage = () => {
                       background: #374151;
                     }
                   `}</style>
-                  {netDisplayedPositions.length === 0 && !isInitialPositionsLoading ? (
+                  {netDisplayedPositions.length === 0 && !isInitialNetLoading ? (
                     <div className="text-center py-12">
                       <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v0" />
@@ -3099,7 +3111,7 @@ const PositionsPage = () => {
                       </thead>
 
                       {/* YouTube-style Loading Progress Bar */}
-                      {isInitialPositionsLoading && (
+                      {isInitialNetLoading && (
                         <thead className="sticky z-40" style={{ top: '48px' }}>
                           <tr>
                             <th colSpan={Object.values(netVisibleColumns).filter(v => v).length} className="p-0" style={{ height: '3px' }}>
@@ -3229,7 +3241,7 @@ const PositionsPage = () => {
                       </div>
                     </div>
                     <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
-                      <span>{clientNetFilteredPositions.length}</span>
+                      <span>{serverTotalClientNetPositions}</span>
                     </div>
                   </div>
                 )}
@@ -3247,7 +3259,7 @@ const PositionsPage = () => {
                       </div>
                     </div>
                     <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
-                      <span>{formatNumber(clientNetFilteredPositions.reduce((sum, p) => sum + p.netVolume, 0), 2)}</span>
+                      <span>{formatNumber(serverClientNetTotals.volume || 0, 2)}</span>
                     </div>
                   </div>
                 )}
@@ -3265,11 +3277,11 @@ const PositionsPage = () => {
                       </div>
                     </div>
                     <div className={`text-sm md:text-base font-bold flex items-center gap-1.5 leading-none ${
-                      clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                      (serverClientNetTotals.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                     }`}>
                       <span>
-                        {clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0) >= 0 ? '▲ ' : '▼ '}
-                        {formatNumber(Math.abs(clientNetFilteredPositions.reduce((sum, p) => sum + p.totalProfit, 0)), 2)}
+                        {(serverClientNetTotals.profit || 0) >= 0 ? '▲ ' : '▼ '}
+                        {formatNumber(Math.abs(serverClientNetTotals.profit || 0), 2)}
                       </span>
                     </div>
                   </div>
@@ -3469,7 +3481,7 @@ const PositionsPage = () => {
                       background: #374151;
                     }
                   `}</style>
-                  {clientNetPositionsData.length === 0 && !isInitialPositionsLoading ? (
+                  {clientNetDisplayedPositions.length === 0 && !isInitialClientNetLoading ? (
                     <div className="text-center py-12">
                       <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v0" />
@@ -3555,7 +3567,7 @@ const PositionsPage = () => {
                       </thead>
 
                       {/* YouTube-style Loading Progress Bar */}
-                      {isInitialPositionsLoading && (
+                      {isInitialClientNetLoading && (
                         <thead className="sticky z-40" style={{ top: '48px' }}>
                           <tr>
                             <th colSpan={Object.values(clientNetVisibleColumns).filter(v => v).length} className="p-0" style={{ height: '3px' }}>
@@ -3681,11 +3693,8 @@ const PositionsPage = () => {
                       value={searchQuery}
                       onChange={(e) => {
                         setSearchQuery(e.target.value)
-                        setShowSuggestions(true)
                         setCurrentPage(1)
                       }}
-                      onFocus={() => setShowSuggestions(true)}
-                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                       onKeyDown={handleSearchKeyDown}
                       placeholder="Search"
                       className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
@@ -3694,7 +3703,6 @@ const PositionsPage = () => {
                       <button
                         onClick={() => {
                           setSearchQuery('')
-                          setShowSuggestions(false)
                         }}
                         className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
                         title="Clear search"
@@ -3704,28 +3712,6 @@ const PositionsPage = () => {
                         </svg>
                       </button>
                     )}
-                    
-                    {/* Suggestions Dropdown - rendered when visible; show message if empty */}
-                    {showSuggestions ? (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-1 z-50 max-h-60 overflow-y-auto">
-                        {getSuggestions().length === 0 && (
-                          <div className="px-3 py-2 text-sm text-[#6B7280]">No suggestions</div>
-                        )}
-                        {getSuggestions().length > 0 && (
-                          <div>
-                            {getSuggestions().map((suggestion, index) => (
-                              <button
-                                key={index}
-                                onClick={() => handleSuggestionClick(suggestion)}
-                                className="w-full text-left px-3 py-2 text-sm text-[#374151] hover:bg-blue-50 transition-colors"
-                              >
-                                {suggestion}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ) : null}
                   </div>
                   
                   {/* Columns Button (icon only) */}
@@ -4013,7 +3999,7 @@ const PositionsPage = () => {
           setShowGroupModal(false)
           setEditingGroup(null)
         }}
-        availableItems={cachedPositions}
+        availableItems={polledPositions}
         loginField="login"
         displayField="symbol"
         secondaryField="position"
@@ -4026,7 +4012,7 @@ const PositionsPage = () => {
           client={{ login: selectedLogin }}
           onClose={() => setSelectedLogin(null)}
           onClientUpdate={() => {}}
-          allPositionsCache={cachedPositions}
+          allPositionsCache={polledPositions}
           allOrdersCache={cachedOrders}
           onCacheUpdate={() => {}}
         />
