@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { authAPI } from '../services/api'
+import { authAPI, scheduleTokenRefresh, cancelTokenRefresh } from '../services/api'
 
 const AuthContext = createContext()
 
@@ -29,6 +29,7 @@ export const AuthProvider = ({ children }) => {
         const parsedUser = JSON.parse(userData)
         setUser(parsedUser)
         setIsAuthenticated(true)
+        scheduleTokenRefresh() // proactively refresh before token expires
         console.log('[Auth] Session restored from localStorage')
       } catch (error) {
         console.error('Error parsing stored user data:', error)
@@ -133,6 +134,7 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(true)
     setAuthError(null)
     
+    scheduleTokenRefresh() // proactively refresh before token expires
     console.log('[Auth] Login successful - tokens stored')
     console.log('[Auth] Refresh token will be used automatically when access token expires')
     
@@ -148,6 +150,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Logout error:', error)
     } finally {
       // Clear storage and state regardless of API call success
+      cancelTokenRefresh()
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
       localStorage.removeItem('user_data')

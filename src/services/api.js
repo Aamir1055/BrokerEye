@@ -37,6 +37,50 @@ if (DEBUG_LOGS) console.log('[API] IB Base URL (hardcoded):', 'https://brokereye
 // Refresh handling state
 let isRefreshing = false
 let refreshPromise = null
+let refreshTimer = null
+
+// Decode JWT expiry without a library
+const getTokenExp = (token) => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
+    return payload.exp // seconds since epoch
+  } catch {
+    return null
+  }
+}
+
+// Schedule a proactive refresh ~60s before the access token expires.
+// Called after login and after each successful refresh.
+export const scheduleTokenRefresh = () => {
+  if (refreshTimer) clearTimeout(refreshTimer)
+
+  const token = localStorage.getItem('access_token')
+  if (!token) return
+
+  const exp = getTokenExp(token)
+  if (!exp) return
+
+  const now = Math.floor(Date.now() / 1000)
+  const secsLeft = exp - now
+  const refreshIn = Math.max(0, (secsLeft - 60) * 1000) // 60s safety margin
+
+  console.log(`[API] ⏰ Proactive refresh in ${Math.round(refreshIn / 1000)}s (token expires in ${secsLeft}s)`)
+
+  refreshTimer = setTimeout(() => {
+    if (!isRefreshing) {
+      isRefreshing = true
+      refreshPromise = doRefresh()
+    }
+    refreshPromise.catch(() => {}) // errors handled inside doRefresh
+  }, refreshIn)
+}
+
+export const cancelTokenRefresh = () => {
+  if (refreshTimer) {
+    clearTimeout(refreshTimer)
+    refreshTimer = null
+  }
+}
 
 const broadcastTokenRefreshed = (accessToken) => {
   try {
@@ -45,6 +89,7 @@ const broadcastTokenRefreshed = (accessToken) => {
 }
 
 const doLogout = () => {
+  cancelTokenRefresh()
   localStorage.removeItem('access_token')
   localStorage.removeItem('refresh_token')
   localStorage.removeItem('user_data')
@@ -65,11 +110,14 @@ const doRefresh = () => {
       const data = res.data
       const newAccess = data?.data?.access_token || data?.access_token
       if (!newAccess) throw new Error('No access_token in refresh response')
+      const newRefresh = data?.data?.refresh_token || data?.refresh_token
       localStorage.setItem('access_token', newAccess)
+      if (newRefresh) localStorage.setItem('refresh_token', newRefresh) // handle rotating tokens
       api.defaults.headers.common['Authorization'] = `Bearer ${newAccess}`
       ibApi.defaults.headers.common['Authorization'] = `Bearer ${newAccess}`
       broadcastTokenRefreshed(newAccess)
       console.log('[API] ✅ Token refreshed successfully')
+      scheduleTokenRefresh() // schedule next refresh
       return newAccess
     })
     .catch((err) => {

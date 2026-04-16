@@ -1,7 +1,27 @@
+import { scheduleTokenRefresh } from './api'
+
 // WebSocket service for real-time broker data updates
 const DEBUG_LOGS = import.meta?.env?.VITE_DEBUG_LOGS === 'true'
 const dlog = (...args) => { if (DEBUG_LOGS) console.log(...args) }
 const dwarn = (...args) => { if (DEBUG_LOGS) console.warn(...args) }
+
+// Decode JWT expiry (seconds since epoch) without a library
+const getTokenExp = (token) => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
+    return payload.exp
+  } catch {
+    return null
+  }
+}
+
+const isTokenExpired = () => {
+  const token = localStorage.getItem('access_token')
+  if (!token) return true
+  const exp = getTokenExp(token)
+  if (!exp) return true
+  return Math.floor(Date.now() / 1000) >= exp
+}
 
 class WebSocketService {
   constructor() {
@@ -21,13 +41,20 @@ class WebSocketService {
     this.maxMissedHeartbeats = 3
     this.reconnectTimer = null
 
-    // Reconnect or ensure auth after token refresh
+    // After a token refresh, always reconnect the WebSocket with the fresh token
+    // (the server may close the old connection when the URL token expires)
     try {
       window.addEventListener('auth:token_refreshed', () => {
-        // If already connected/open, no need to tear down; otherwise attempt connect
-        if (!this.isConnected()) {
-          this.connect()
+        console.log('[WebSocket] Token refreshed — reconnecting with new token')
+        this.reconnectAttempts = 0 // reset backoff
+        if (this.ws) {
+          // Close existing connection; onclose will NOT auto-reconnect because
+          // we use code 1000 (clean close). We reconnect explicitly below.
+          try { this.ws.close(1000, 'Token refreshed') } catch {}
+          this.ws = null
         }
+        this.stopHeartbeat()
+        this.connect()
       })
     } catch {}
   }
@@ -206,7 +233,22 @@ class WebSocketService {
     dlog(`[WebSocket] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
     this.setConnectionState('connecting')
 
-    this.reconnectTimer = setTimeout(() => {
+    this.reconnectTimer = setTimeout(async () => {
+      // If the access token is expired, refresh it before reconnecting
+      if (isTokenExpired()) {
+        console.log('[WebSocket] Access token expired — triggering refresh before reconnect')
+        try {
+          // Import doRefresh dynamically to trigger a refresh; on success
+          // the 'auth:token_refreshed' event fires and reconnects the WS.
+          scheduleTokenRefresh()
+          return // scheduleTokenRefresh (with 0 delay) will refresh → event → reconnect
+        } catch (err) {
+          console.error('[WebSocket] Token refresh failed during reconnect:', err?.message)
+          // doRefresh already calls doLogout on failure, so just bail
+          return
+        }
+      }
+
       dlog('[WebSocket] Attempting to reconnect...')
       const connected = this.connect()
       if (!connected && this.reconnectAttempts < this.maxReconnectAttempts) {
