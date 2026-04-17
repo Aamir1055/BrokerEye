@@ -467,13 +467,17 @@ const PendingOrdersPage = () => {
   const pageSizeOptions = generatePageSizeOptions()
   
   const handleSearchClick = () => {
-    setActiveSearch(searchQuery.trim())
+    const trimmed = searchQuery.trim()
+    if (trimmed === activeSearch) return
+    setActiveSearch(trimmed)
     setCurrentPage(1)
   }
   
   const handleSearchKeyDown = (e) => {
     if (e.key === 'Enter') {
-      setActiveSearch(searchQuery.trim())
+      const trimmed = searchQuery.trim()
+      if (trimmed === activeSearch) return
+      setActiveSearch(trimmed)
       setCurrentPage(1)
     }
   }
@@ -1312,39 +1316,45 @@ const PendingOrdersPage = () => {
                 <div className="flex items-center gap-2 flex-1">
                   {/* Search Bar */}
                   <div className="relative flex-1 max-w-md" ref={searchRef}>
-                    <button
-                      onClick={handleSearchClick}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
-                      title="Search"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 18 18">
-                        <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
-                        <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      </svg>
-                    </button>
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" fill="none" viewBox="0 0 18 18">
+                      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyDown={handleSearchKeyDown}
-                      placeholder="Search (press Enter)"
-                      className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      placeholder="Search"
+                      className={`w-full h-10 pl-10 ${searchQuery ? 'pr-20' : 'pr-10'} text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all`}
                     />
-                    {searchQuery && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                      {searchQuery && (
+                        <button
+                          onClick={() => {
+                            setSearchQuery('')
+                            setActiveSearch('')
+                            setCurrentPage(1)
+                          }}
+                          className="p-1 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
+                          title="Clear search"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
                       <button
-                        onClick={() => {
-                          setSearchQuery('')
-                          setActiveSearch('')
-                          setCurrentPage(1)
-                        }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
-                        title="Clear search"
+                        onClick={handleSearchClick}
+                        className="p-1 rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                        title="Search"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 18 18">
+                          <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                          <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                         </svg>
                       </button>
-                    )}
+                    </div>
                   </div>
                   
                   {/* Columns Button (icon only) */}
