@@ -42,17 +42,20 @@ const PositionsPage = () => {
   // --- Positions are fetched via REST polling (1s) when this page is active ---
   const [polledPositions, setPolledPositions] = useState([])
   const [serverTotalPositions, setServerTotalPositions] = useState(0)
+  const [hasFetchedPositions, setHasFetchedPositions] = useState(false)
   // Server-provided totals across ALL positions (not just current page)
   const [serverTotals, setServerTotals] = useState({ profit: 0, storage: 0, volume: 0 })
 
   // --- NET positions fetched via REST polling (1s) when NET tab is active ---
   const [polledNetPositions, setPolledNetPositions] = useState([])
   const [serverTotalNetPositions, setServerTotalNetPositions] = useState(0)
+  const [hasFetchedNetPositions, setHasFetchedNetPositions] = useState(false)
   const [serverNetTotals, setServerNetTotals] = useState({ profit: 0, storage: 0, volume: 0 })
 
   // --- Client NET positions fetched via REST polling (1s) when Client NET tab is active ---
   const [polledClientNetPositions, setPolledClientNetPositions] = useState([])
   const [serverTotalClientNetPositions, setServerTotalClientNetPositions] = useState(0)
+  const [hasFetchedClientNetPositions, setHasFetchedClientNetPositions] = useState(false)
   const [serverClientNetTotals, setServerClientNetTotals] = useState({ profit: 0, storage: 0, volume: 0 })
   
   // Build client currency map from rawClients for USC detection
@@ -272,6 +275,7 @@ const PositionsPage = () => {
 
   // Column filter states
   const [columnFilters, setColumnFilters] = useState({})
+  const [pendingColumnFilters, setPendingColumnFilters] = useState({})
   const [showFilterDropdown, setShowFilterDropdown] = useState(null)
   const filterRefs = useRef({})
   const numberFilterButtonRefs = useRef({})
@@ -353,9 +357,8 @@ const PositionsPage = () => {
       return allActions
     }
 
-    // For login column, use all logins from rawClients
-    if (columnKey === 'login' && rawClients.length > 0) {
-      const allLogins = [...new Set(rawClients.map(c => c.login).filter(l => l != null))].sort((a, b) => a - b)
+    // For login column, use server-provided login list from API
+    if (columnKey === 'login' && allLogins.length > 0) {
       const searchQ = filterSearchQuery[columnKey]?.toLowerCase() || ''
       if (searchQ) {
         return allLogins.filter(l => String(l).toLowerCase().includes(searchQ))
@@ -412,7 +415,7 @@ const PositionsPage = () => {
   }
 
   const toggleColumnFilter = (columnKey, value) => {
-    setColumnFilters(prev => {
+    setPendingColumnFilters(prev => {
       const currentFilters = prev[columnKey] || []
       const newFilters = currentFilters.includes(value)
         ? currentFilters.filter(v => v !== value)
@@ -425,24 +428,40 @@ const PositionsPage = () => {
       
       return { ...prev, [columnKey]: newFilters }
     })
-    setCurrentPage(1)
   }
 
   const selectAllFilters = (columnKey) => {
     const allValues = getUniqueColumnValues(columnKey)
-    setColumnFilters(prev => ({
+    setPendingColumnFilters(prev => ({
       ...prev,
       [columnKey]: allValues
     }))
-    setCurrentPage(1)
   }
 
   const deselectAllFilters = (columnKey) => {
-    setColumnFilters(prev => {
+    setPendingColumnFilters(prev => {
       const { [columnKey]: _, ...rest } = prev
       return rest
     })
+  }
+
+  // Commit pending checkbox filters to actual columnFilters (called on OK / Enter)
+  const commitColumnFilters = () => {
+    setColumnFilters(prev => {
+      const merged = { ...prev }
+      // Get the column that's currently open
+      const columnKey = showFilterDropdown
+      if (!columnKey) return prev
+      // Update only the open column's checkbox filters from pending
+      if (pendingColumnFilters[columnKey] && pendingColumnFilters[columnKey].length > 0) {
+        merged[columnKey] = pendingColumnFilters[columnKey]
+      } else {
+        delete merged[columnKey]
+      }
+      return merged
+    })
     setCurrentPage(1)
+    setShowFilterDropdown(null)
   }
 
   const clearColumnFilter = (columnKey) => {
@@ -472,7 +491,7 @@ const PositionsPage = () => {
 
   const isAllSelected = (columnKey) => {
     const allValues = getUniqueColumnValues(columnKey)
-    const selectedValues = columnFilters[columnKey] || []
+    const selectedValues = pendingColumnFilters[columnKey] || []
     return allValues.length > 0 && selectedValues.length === allValues.length
   }
 
@@ -500,11 +519,6 @@ const PositionsPage = () => {
     setShowFilterDropdown(null)
     setShowNumberFilterDropdown(null)
     setCurrentPage(1)
-    
-    // Reset form
-    setCustomFilterValue1('')
-    setCustomFilterValue2('')
-    setCustomFilterType('equal')
   }
 
   // Check if value matches number or text filter
@@ -597,6 +611,16 @@ const PositionsPage = () => {
     }).catch((err) => { console.warn('[Symbols] Fetch error:', err?.message) })
   }
 
+  // Server-provided login list for column filter
+  const [allLogins, setAllLogins] = useState([])
+  const fetchLogins = () => {
+    if (!isAuthenticated) return
+    brokerAPI.getPositionLogins().then(res => {
+      const logins = res?.data?.logins || res?.data || []
+      if (Array.isArray(logins)) setAllLogins(logins.sort((a, b) => a - b))
+    }).catch((err) => { console.warn('[Logins] Fetch error:', err?.message) })
+  }
+
   // Show loading skeleton when page changes
   useEffect(() => {
     if (currentPage !== prevPageRef.current) {
@@ -659,21 +683,15 @@ const PositionsPage = () => {
         })
         // Add checkbox symbol selections as API filters
         if (Array.isArray(columnFilters['symbol']) && columnFilters['symbol'].length > 0) {
-          columnFilters['symbol'].forEach(sym => {
-            apiFilters.push({ field: 'symbol', operator: 'equal', value: sym })
-          })
+          apiFilters.push({ field: 'symbol', operator: 'in', value: columnFilters['symbol'] })
         }
         // Add checkbox action selections as API filters
         if (Array.isArray(columnFilters['action']) && columnFilters['action'].length > 0) {
-          columnFilters['action'].forEach(act => {
-            apiFilters.push({ field: 'action', operator: 'equal', value: act })
-          })
+          apiFilters.push({ field: 'action', operator: 'in', value: columnFilters['action'] })
         }
         // Add login checkbox selections as API filters
         if (Array.isArray(columnFilters['login']) && columnFilters['login'].length > 0) {
-          columnFilters['login'].forEach(login => {
-            apiFilters.push({ field: 'login', operator: 'equal', value: Number(login) })
-          })
+          apiFilters.push({ field: 'login', operator: 'in', value: columnFilters['login'].map(Number) })
         }
         if (apiFilters.length > 0) {
           params.filters = apiFilters
@@ -689,6 +707,7 @@ const PositionsPage = () => {
           setServerTotalPositions(total)
           if (totals) setServerTotals(totals)
           setIsPageLoading(false)
+          setHasFetchedPositions(true)
         }
       } catch (err) {
         if (!isCancelled) {
@@ -787,6 +806,7 @@ const PositionsPage = () => {
           }))
           setPolledNetPositions(mapped)
           setServerTotalNetPositions(total)
+          setHasFetchedNetPositions(true)
         }
       } catch (err) {
         if (!isCancelled) console.warn('[NET Positions] Polling error:', err?.message)
@@ -868,6 +888,7 @@ const PositionsPage = () => {
           }))
           setPolledClientNetPositions(mapped)
           setServerTotalClientNetPositions(total)
+          setHasFetchedClientNetPositions(true)
         }
       } catch (err) {
         if (!isCancelled) console.warn('[Client NET Positions] Polling error:', err?.message)
@@ -1769,8 +1790,12 @@ const PositionsPage = () => {
                 e.stopPropagation()
                 const opening = showFilterDropdown !== columnKey
                 setShowFilterDropdown(opening ? columnKey : null)
-                if (opening && columnKey === 'symbol') fetchSymbols()
-                // No extra fetch needed for login — uses rawClients from DataContext
+                if (opening) {
+                  // Initialize pending filters from current committed filters
+                  setPendingColumnFilters(prev => ({ ...prev, [columnKey]: columnFilters[columnKey] || [] }))
+                  if (columnKey === 'symbol') fetchSymbols()
+                  if (columnKey === 'login') fetchLogins()
+                }
               }}
               className={`p-1 rounded hover:bg-blue-800/50 transition-colors ${filterCount > 0 ? 'text-yellow-400' : 'text-white/70'}`}
               title="Filter column"
@@ -1787,6 +1812,12 @@ const PositionsPage = () => {
 
             {showFilterDropdown === columnKey && (
               <div className="fixed bg-white border-2 border-slate-300 rounded-lg shadow-2xl z-[9999] w-64" 
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.stopPropagation()
+                    commitColumnFilters()
+                  }
+                }}
                 style={{
                   top: '50%',
                   transform: 'translateY(-50%)',
@@ -1914,13 +1945,20 @@ const PositionsPage = () => {
                         e.stopPropagation()
                         if (showNumberFilterDropdown === columnKey) {
                           setShowNumberFilterDropdown(null)
-                          setCustomFilterValue1('')
-                          setCustomFilterValue2('')
                         } else {
                           setShowNumberFilterDropdown(columnKey)
                           setCustomFilterColumn(columnKey)
-                          setCustomFilterValue1('')
-                          setCustomFilterValue2('')
+                          // Restore existing filter values if any
+                          const existing = columnFilters[`${columnKey}_number`]
+                          if (existing) {
+                            setCustomFilterType(existing.type || 'equal')
+                            setCustomFilterValue1(existing.value1 != null ? String(existing.value1) : '')
+                            setCustomFilterValue2(existing.value2 != null ? String(existing.value2) : '')
+                          } else {
+                            setCustomFilterType('equal')
+                            setCustomFilterValue1('')
+                            setCustomFilterValue2('')
+                          }
                         }
                       }}
                       className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
@@ -2130,13 +2168,20 @@ const PositionsPage = () => {
                           e.stopPropagation()
                           if (showNumberFilterDropdown === columnKey) {
                             setShowNumberFilterDropdown(null)
-                            setCustomFilterValue1('')
-                            setCustomFilterValue2('')
                           } else {
                             setShowNumberFilterDropdown(columnKey)
                             setCustomFilterColumn(columnKey)
-                            setCustomFilterValue1('')
-                            setCustomFilterValue2('')
+                            // Restore existing filter values if any
+                            const existing = columnFilters[`${columnKey}_number`]
+                            if (existing) {
+                              setCustomFilterType(existing.type || 'equal')
+                              setCustomFilterValue1(existing.value1 != null ? String(existing.value1) : '')
+                              setCustomFilterValue2(existing.value2 != null ? String(existing.value2) : '')
+                            } else {
+                              setCustomFilterType('equal')
+                              setCustomFilterValue1('')
+                              setCustomFilterValue2('')
+                            }
                           }
                         }}
                         className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
@@ -2310,7 +2355,7 @@ const PositionsPage = () => {
                         >
                           <input
                             type="checkbox"
-                            checked={(columnFilters[columnKey] || []).includes(value)}
+                            checked={(pendingColumnFilters[columnKey] || []).includes(value)}
                             onChange={(e) => {
                               e.stopPropagation()
                               toggleColumnFilter(columnKey, value)
@@ -2333,6 +2378,7 @@ const PositionsPage = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
+                      // Discard pending changes
                       setShowFilterDropdown(null)
                     }}
                     className="flex-1 px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-md transition-colors"
@@ -2342,7 +2388,7 @@ const PositionsPage = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      setShowFilterDropdown(null)
+                      commitColumnFilters()
                     }}
                     className="flex-1 px-3 py-1.5 text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
                   >
@@ -2358,9 +2404,9 @@ const PositionsPage = () => {
   }
 
   // Only show local loading inside cards/tables; keep the page chrome interactive
-  const isInitialPositionsLoading = polledPositions.length === 0 && !serverTotalPositions
-  const isInitialNetLoading = polledNetPositions.length === 0 && !serverTotalNetPositions && showNetPositions
-  const isInitialClientNetLoading = polledClientNetPositions.length === 0 && !serverTotalClientNetPositions && showClientNet
+  const isInitialPositionsLoading = !hasFetchedPositions
+  const isInitialNetLoading = !hasFetchedNetPositions && showNetPositions
+  const isInitialClientNetLoading = !hasFetchedClientNetPositions && showClientNet
 
   // Early return for mobile - render mobile component
   if (isMobile) {
@@ -3548,72 +3594,135 @@ const PositionsPage = () => {
                         <tr>
                           {clientNetVisibleColumns.login && (
                             <th 
-                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer select-none group sticky left-0"
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group sticky left-0"
                               onClick={() => handleClientNetSort('login')}
                               style={{ backgroundColor: '#2563eb', zIndex: 31 }}
                             >
                               <div className="flex items-center gap-1">
                                 <span>Login</span>
+                                {clientNetSortColumn === 'login' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
                               </div>
                             </th>
                           )}
                           {clientNetVisibleColumns.symbol && (
                             <th 
-                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer select-none group"
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
                               onClick={() => handleClientNetSort('symbol')}
                             >
                               <div className="flex items-center gap-1">
                                 <span>Symbol</span>
+                                {clientNetSortColumn === 'symbol' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
                               </div>
                             </th>
                           )}
                           {clientNetVisibleColumns.netType && (
                             <th 
-                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer select-none group"
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
                               onClick={() => handleClientNetSort('netType')}
                             >
                               <div className="flex items-center gap-1">
                                 <span>NET Type</span>
+                                {clientNetSortColumn === 'netType' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
                               </div>
                             </th>
                           )}
                           {clientNetVisibleColumns.netVolume && (
                             <th 
-                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer select-none group"
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
                               onClick={() => handleClientNetSort('netVolume')}
                             >
                               <div className="flex items-center gap-1">
                                 <span>NET Volume</span>
+                                {clientNetSortColumn === 'netVolume' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
                               </div>
                             </th>
                           )}
                           {clientNetVisibleColumns.avgPrice && (
                             <th 
-                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer select-none group"
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
                               onClick={() => handleClientNetSort('avgPrice')}
                             >
                               <div className="flex items-center gap-1">
                                 <span>Avg Price</span>
+                                {clientNetSortColumn === 'avgPrice' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
                               </div>
                             </th>
                           )}
                           {clientNetVisibleColumns.totalProfit && (
                             <th 
-                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer select-none group"
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
                               onClick={() => handleClientNetSort('totalProfit')}
                             >
                               <div className="flex items-center gap-1">
                                 <span>Total Profit</span>
+                                {clientNetSortColumn === 'totalProfit' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
                               </div>
                             </th>
                           )}
                           {clientNetVisibleColumns.totalPositions && (
                             <th 
-                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer select-none group"
+                              className="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider cursor-pointer hover:bg-blue-700/70 transition-all select-none group"
                               onClick={() => handleClientNetSort('totalPositions')}
                             >
                               <div className="flex items-center gap-1">
                                 <span>Positions</span>
+                                {clientNetSortColumn === 'totalPositions' ? (
+                                  <svg className={`w-3 h-3 transition-transform ${clientNetSortDirection === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3 h-3 opacity-0 group-hover:opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                  </svg>
+                                )}
                               </div>
                             </th>
                           )}
