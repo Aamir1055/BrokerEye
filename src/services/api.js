@@ -397,6 +397,24 @@ export const brokerAPI = {
     const response = await api.get('/api/broker/orders')
     return response.data
   },
+
+  // Search pending orders with server-side filtering, sorting, pagination
+  searchOrders: async (params) => {
+    const response = await api.post('/api/broker/orders/search', params)
+    return response.data
+  },
+
+  // Get all order symbols
+  getOrderSymbols: async () => {
+    const response = await api.get('/api/broker/orders/symbols')
+    return response.data
+  },
+
+  // Get all order logins
+  getOrderLogins: async () => {
+    const response = await api.get('/api/broker/orders/logins')
+    return response.data
+  },
   
   // Get client deals with pagination support
   getClientDeals: async (login, from, to, limit = 1000, offset = 0) => {

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useData } from '../contexts/DataContext'
 import { useGroups } from '../contexts/GroupContext'
 import { useIB } from '../contexts/IBContext'
+import { brokerAPI } from '../services/api'
 import Sidebar from '../components/Sidebar'
 import WebSocketIndicator from '../components/WebSocketIndicator'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -16,10 +17,18 @@ const PendingOrdersPage = () => {
   const [isMobile, setIsMobile] = useState(false)
 
   // Use cached data from DataContext - MUST be called before conditional return
-  const { orders: cachedOrders, positions: cachedPositions, fetchOrders, loading, connectionState } = useData()
+  const { orders: cachedOrders, positions: cachedPositions, fetchOrders } = useData()
   const { filterByActiveGroup, activeGroupFilters } = useGroups()
   const { filterByActiveIB, selectedIB, ibMT5Accounts } = useIB()
   
+  // Server-side polled data
+  const [polledOrders, setPolledOrders] = useState([])
+  const [serverTotalOrders, setServerTotalOrders] = useState(0)
+  const [serverTotals, setServerTotals] = useState({ volumeCurrent: 0, volumeInitial: 0 })
+  const [hasFetchedOrders, setHasFetchedOrders] = useState(false)
+  const [isPageLoading, setIsPageLoading] = useState(false)
+  const prevPageRef = useRef(1)
+
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try {
       const v = localStorage.getItem('sidebarOpen')
@@ -38,12 +47,12 @@ const PendingOrdersPage = () => {
   const [itemsPerPage, setItemsPerPage] = useState(50)
   
   // Sorting states
-  const [sortColumn, setSortColumn] = useState(null)
-  const [sortDirection, setSortDirection] = useState('asc')
+  const [sortColumn, setSortColumn] = useState('timeSetup')
+  const [sortDirection, setSortDirection] = useState('desc')
   
   // Search states
   const [searchQuery, setSearchQuery] = useState('')
-  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [activeSearch, setActiveSearch] = useState('')
   const searchRef = useRef(null)
   
   // Track if component is mounted to prevent updates after unmount
@@ -87,6 +96,7 @@ const PendingOrdersPage = () => {
 
   // Column filter states
   const [columnFilters, setColumnFilters] = useState({})
+  const [pendingColumnFilters, setPendingColumnFilters] = useState({})
   const [showFilterDropdown, setShowFilterDropdown] = useState(null)
   const filterRefs = useRef({})
   const numberFilterButtonRefs = useRef({})
@@ -102,38 +112,33 @@ const PendingOrdersPage = () => {
   const [customFilterOperator, setCustomFilterOperator] = useState('AND')
 
   // Define string columns that should show text filters instead of number filters
-  const stringColumns = ['symbol', 'type', 'state']
+  const stringColumns = ['symbol', 'type', 'state', 'login']
   const isStringColumn = (key) => stringColumns.includes(key)
 
   // Column filter helper functions
   const getUniqueColumnValues = (columnKey) => {
-    const values = new Set()
-    cachedOrders.forEach(order => {
-      const value = order[columnKey]
-      if (value !== null && value !== undefined && value !== '') {
-        values.add(value)
-      }
-    })
-    const sortedValues = Array.from(values).sort((a, b) => {
-      if (typeof a === 'number' && typeof b === 'number') {
-        return a - b
-      }
-      return String(a).localeCompare(String(b))
-    })
-    
-    // Filter by search query if exists
-    const searchQuery = filterSearchQuery[columnKey]?.toLowerCase() || ''
-    if (searchQuery) {
-      return sortedValues.filter(value => 
-        String(value).toLowerCase().includes(searchQuery)
-      )
+    // Use API-fetched values for symbol and login
+    if (columnKey === 'symbol') {
+      const searchQuery = filterSearchQuery[columnKey]?.toLowerCase() || ''
+      const values = allSymbols.length > 0 ? allSymbols : []
+      return searchQuery ? values.filter(v => String(v).toLowerCase().includes(searchQuery)) : values
     }
-    
-    return sortedValues
+    if (columnKey === 'login') {
+      const searchQuery = filterSearchQuery[columnKey]?.toLowerCase() || ''
+      const values = allLogins.length > 0 ? allLogins : []
+      return searchQuery ? values.filter(v => String(v).toLowerCase().includes(searchQuery)) : values
+    }
+    // For type column, use hardcoded values
+    if (columnKey === 'type') {
+      const typeValues = ['BUY_LIMIT', 'SELL_LIMIT', 'BUY_STOP', 'SELL_STOP', 'BUY_STOP_LIMIT', 'SELL_STOP_LIMIT']
+      const searchQuery = filterSearchQuery[columnKey]?.toLowerCase() || ''
+      return searchQuery ? typeValues.filter(v => v.toLowerCase().includes(searchQuery)) : typeValues
+    }
+    return []
   }
 
   const toggleColumnFilter = (columnKey, value) => {
-    setColumnFilters(prev => {
+    setPendingColumnFilters(prev => {
       const currentFilters = prev[columnKey] || []
       const newFilters = currentFilters.includes(value)
         ? currentFilters.filter(v => v !== value)
@@ -150,14 +155,14 @@ const PendingOrdersPage = () => {
 
   const selectAllFilters = (columnKey) => {
     const allValues = getUniqueColumnValues(columnKey)
-    setColumnFilters(prev => ({
+    setPendingColumnFilters(prev => ({
       ...prev,
       [columnKey]: allValues
     }))
   }
 
   const deselectAllFilters = (columnKey) => {
-    setColumnFilters(prev => {
+    setPendingColumnFilters(prev => {
       const { [columnKey]: _, ...rest } = prev
       return rest
     })
@@ -189,8 +194,25 @@ const PendingOrdersPage = () => {
 
   const isAllSelected = (columnKey) => {
     const allValues = getUniqueColumnValues(columnKey)
-    const selectedValues = columnFilters[columnKey] || []
+    const selectedValues = pendingColumnFilters[columnKey] || []
     return allValues.length > 0 && selectedValues.length === allValues.length
+  }
+
+  // Commit pending checkbox selections to actual column filters
+  const commitColumnFilters = () => {
+    setColumnFilters(prev => {
+      const merged = { ...prev }
+      const columnKey = showFilterDropdown
+      if (!columnKey) return prev
+      if (pendingColumnFilters[columnKey] && pendingColumnFilters[columnKey].length > 0) {
+        merged[columnKey] = pendingColumnFilters[columnKey]
+      } else {
+        delete merged[columnKey]
+      }
+      return merged
+    })
+    setCurrentPage(1)
+    setShowFilterDropdown(null)
   }
 
   // Apply custom number filter
@@ -213,43 +235,9 @@ const PendingOrdersPage = () => {
     setShowCustomFilterModal(false)
     setShowFilterDropdown(null)
     setShowNumberFilterDropdown(null)
-    
-    // Reset form
-    setCustomFilterValue1('')
-    setCustomFilterValue2('')
-    setCustomFilterType('equal')
+    setCurrentPage(1)
   }
 
-  // Check if value matches number filter
-  const matchesNumberFilter = (value, filterConfig) => {
-    if (!filterConfig) return true
-    
-    const numValue = parseFloat(value)
-    if (isNaN(numValue)) return false
-
-    const { type, value1, value2 } = filterConfig
-
-    switch (type) {
-      case 'equal':
-        return numValue === value1
-      case 'notEqual':
-        return numValue !== value1
-      case 'lessThan':
-        return numValue < value1
-      case 'lessThanOrEqual':
-        return numValue <= value1
-      case 'greaterThan':
-        return numValue > value1
-      case 'greaterThanOrEqual':
-        return numValue >= value1
-      case 'between':
-        return value2 !== null && numValue >= value1 && numValue <= value2
-      default:
-        return true
-    }
-  }
-  
-  const hasInitialLoad = useRef(false)
   // Transient UI flashes for updated orders
   const [flashes, setFlashes] = useState({})
   const flashTimeouts = useRef(new Map())
@@ -278,22 +266,135 @@ const PendingOrdersPage = () => {
     }
   }, [])
   
-  // Close suggestions when clicking outside
+  // Close column selector when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setShowSuggestions(false)
-      }
       if (columnSelectorRef.current && !columnSelectorRef.current.contains(event.target)) {
         setShowColumnSelector(false)
       }
     }
     
-    if (showSuggestions || showColumnSelector) {
+    if (showColumnSelector) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [showSuggestions, showColumnSelector])
+  }, [showColumnSelector])
+
+  // API-based symbol/login dropdown values
+  const [allSymbols, setAllSymbols] = useState([])
+  const fetchSymbols = () => {
+    brokerAPI.getOrderSymbols().then(res => {
+      const symbols = res?.data?.symbols || []
+      if (Array.isArray(symbols)) setAllSymbols(symbols)
+    }).catch((err) => { console.warn('[OrderSymbols] Fetch error:', err?.message) })
+  }
+
+  const [allLogins, setAllLogins] = useState([])
+  const fetchLogins = () => {
+    brokerAPI.getOrderLogins().then(res => {
+      const logins = res?.data?.logins || res?.data || []
+      if (Array.isArray(logins)) setAllLogins(logins.sort((a, b) => a - b))
+    }).catch((err) => { console.warn('[OrderLogins] Fetch error:', err?.message) })
+  }
+
+  // REST polling with server-side search, sort, filter, pagination
+  useEffect(() => {
+    let timer = null
+    let isCancelled = false
+
+    const poll = async () => {
+      if (isCancelled) return
+      try {
+        const params = {
+          page: currentPage,
+          limit: itemsPerPage,
+          sortBy: sortColumn || 'timeSetup',
+          sortOrder: sortDirection || 'desc'
+        }
+        if (activeSearch.trim()) {
+          params.search = activeSearch.trim()
+        }
+        // Build server-side filters from column condition filters
+        const apiFilterTypeMap = {
+          startsWith: 'starts_with',
+          endsWith: 'ends_with',
+          contains: 'contain',
+          doesNotContain: 'does_not_contain',
+          equal: 'equal',
+          notEqual: 'not_equal',
+          lessThan: 'less_than',
+          lessThanOrEqual: 'less_than_or_equal',
+          greaterThan: 'greater_than',
+          greaterThanOrEqual: 'greater_than_or_equal'
+        }
+        const apiFilters = []
+        Object.entries(columnFilters).forEach(([key, config]) => {
+          if (!key.endsWith('_number') || !config) return
+          const field = key.replace('_number', '')
+          const operator = apiFilterTypeMap[config.type]
+          if (!operator) return
+          if (config.type === 'between' && config.value2 != null) {
+            apiFilters.push({ field, operator: 'greater_than_or_equal', value: String(config.value1) })
+            apiFilters.push({ field, operator: 'less_than_or_equal', value: String(config.value2) })
+          } else {
+            apiFilters.push({ field, operator, value: String(config.value1) })
+          }
+        })
+        // Add checkbox symbol selections as API filters
+        if (Array.isArray(columnFilters['symbol']) && columnFilters['symbol'].length > 0) {
+          apiFilters.push({ field: 'symbol', operator: 'in', value: columnFilters['symbol'] })
+        }
+        // Add checkbox type selections as API filters
+        if (Array.isArray(columnFilters['type']) && columnFilters['type'].length > 0) {
+          apiFilters.push({ field: 'type', operator: 'in', value: columnFilters['type'] })
+        }
+        // Add login checkbox selections as API filters
+        if (Array.isArray(columnFilters['login']) && columnFilters['login'].length > 0) {
+          apiFilters.push({ field: 'login', operator: 'in', value: columnFilters['login'].map(Number) })
+        }
+        if (apiFilters.length > 0) {
+          params.filters = apiFilters
+        }
+
+        const response = await brokerAPI.searchOrders(params)
+        if (isCancelled) return
+        const data = response?.data?.orders || response?.data?.positions || response?.orders || []
+        const total = response?.data?.total || response?.total || 0
+        const totals = response?.data?.totals || response?.totals || null
+        if (Array.isArray(data)) {
+          setPolledOrders(data)
+          setServerTotalOrders(total)
+          if (totals) setServerTotals(totals)
+          setIsPageLoading(false)
+          setHasFetchedOrders(true)
+        }
+      } catch (err) {
+        if (!isCancelled) {
+          console.warn('[Orders] Polling error:', err?.message)
+        }
+      }
+      if (!isCancelled) {
+        timer = setTimeout(poll, 2000)
+      }
+    }
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        if (!timer) poll()
+      } else {
+        if (timer) { clearTimeout(timer); timer = null }
+      }
+    }
+
+    if (document.visibilityState === 'visible') poll()
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    return () => {
+      isCancelled = true
+      if (timer) { clearTimeout(timer); timer = null }
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }, [currentPage, itemsPerPage, sortColumn, sortDirection, activeSearch, columnFilters])
 
   // Helper to get order id
   const getOrderId = (order) => {
@@ -360,176 +461,52 @@ const PendingOrdersPage = () => {
   // Generate dynamic pagination options based on data count (no 'All' option)
   const generatePageSizeOptions = () => {
     const baseSizes = [25, 50, 100, 200]
-    const totalCount = cachedOrders.length
-    return baseSizes.filter(size => size <= totalCount)
+    return baseSizes
   }
   
   const pageSizeOptions = generatePageSizeOptions()
   
-  // Search function
-  const searchOrders = (ordersToSearch) => {
-    if (!searchQuery.trim()) {
-      return ordersToSearch
-    }
-    
-    const query = searchQuery.toLowerCase().trim()
-    return ordersToSearch.filter(order => {
-      // Search through all primitive fields
-      for (const key in order) {
-        if (order.hasOwnProperty(key)) {
-          const value = order[key]
-          
-          // Handle type field specially (BUY LIMIT, SELL STOP, etc.)
-          if (key === 'type') {
-            const typeStr = String(value || '').toLowerCase()
-            if (typeStr.includes(query)) return true
-          }
-          // Check primitive values (string, number)
-          else if (value !== null && value !== undefined) {
-            const strValue = String(value).toLowerCase()
-            if (strValue.includes(query)) return true
-          }
-        }
-      }
-      return false
-    })
-  }
-  
-  const handleSuggestionClick = (suggestion) => {
-    const value = suggestion.split(': ')[1]
-    setSearchQuery(value)
-    setShowSuggestions(false)
+  const handleSearchClick = () => {
+    setActiveSearch(searchQuery.trim())
+    setCurrentPage(1)
   }
   
   const handleSearchKeyDown = (e) => {
     if (e.key === 'Enter') {
-      setShowSuggestions(false)
+      setActiveSearch(searchQuery.trim())
+      setCurrentPage(1)
     }
   }
   
-  // Sorting function with type detection
-  const sortOrders = (ordersToSort) => {
-    if (!sortColumn) return ordersToSort
-    
-    const sorted = [...ordersToSort].sort((a, b) => {
-      let aVal, bVal
-      
-      // Handle volume field which can have multiple property names
-      if (sortColumn === 'volume') {
-        aVal = a.volumeCurrent ?? a.volume ?? a.volumeInitial
-        bVal = b.volumeCurrent ?? b.volume ?? b.volumeInitial
-      } else {
-        aVal = a[sortColumn]
-        bVal = b[sortColumn]
-      }
-      
-      // Handle null/undefined values
-      if (aVal == null && bVal == null) return 0
-      if (aVal == null) return 1
-      if (bVal == null) return -1
-      
-      // Detect data type and sort accordingly
-      // Check if it's a number (including volume, prices, etc.)
-      const aNum = Number(aVal)
-      const bNum = Number(bVal)
-      if (!isNaN(aNum) && !isNaN(bNum)) {
-        return sortDirection === 'asc' ? aNum - bNum : bNum - aNum
-      }
-      
-      // Default to string comparison (for login, symbol, action, etc.)
-      const aStr = String(aVal).toLowerCase()
-      const bStr = String(bVal).toLowerCase()
-      if (sortDirection === 'asc') {
-        return aStr.localeCompare(bStr)
-      } else {
-        return bStr.localeCompare(aStr)
-      }
-    })
-    
-    return sorted
-  }
-  
-  const searchedOrders = searchOrders(cachedOrders)
-  
-  // Apply IB filter first (cumulative order: IB -> Group)
-  let ibFilteredOrders = filterByActiveIB(searchedOrders, 'login')
-  
-  // Apply group filter on top of IB filter
-  let groupFilteredOrders = filterByActiveGroup(ibFilteredOrders, 'login', 'pendingorders')
-  
-  // Continue with groupFilteredOrders as ibFilteredOrders for consistency
-  ibFilteredOrders = groupFilteredOrders
-  
-  // Apply column filters
-  Object.entries(columnFilters).forEach(([columnKey, values]) => {
-    if (columnKey.endsWith('_number')) {
-      // Number filter
-      const actualColumnKey = columnKey.replace('_number', '')
-      ibFilteredOrders = ibFilteredOrders.filter(order => {
-        const orderValue = order[actualColumnKey]
-        return matchesNumberFilter(orderValue, values)
-      })
-    } else if (values && values.length > 0) {
-      // Regular checkbox filter
-      ibFilteredOrders = ibFilteredOrders.filter(order => {
-        const orderValue = order[columnKey]
-        return values.includes(orderValue)
-      })
-    }
-  })
-  
-  const sortedOrders = sortOrders(ibFilteredOrders)
-  
-  // Get search suggestions
-  const getSuggestions = () => {
-    if (!searchQuery.trim() || searchQuery.length < 1) {
-      return []
-    }
-    
-    const query = searchQuery.toLowerCase().trim()
-    const suggestions = new Set()
-    
-    sortedOrders.forEach(order => {
-      const login = String(order.login || '')
-      const symbol = String(order.symbol || '')
-      const orderId = String(order.order || order.ticket || '')
-      
-      if (login.toLowerCase().includes(query)) {
-        suggestions.add(`Login: ${login}`)
-      }
-      if (symbol.toLowerCase().includes(query) && symbol) {
-        suggestions.add(`Symbol: ${symbol}`)
-      }
-      if (orderId.toLowerCase().includes(query)) {
-        suggestions.add(`Order: ${orderId}`)
-      }
-    })
-    
-    return Array.from(suggestions).slice(0, 10)
-  }
+  // Server data is already sorted/filtered/paginated — use directly
+  const displayedOrders = polledOrders
   
   // Handle column header click for sorting
   const handleSort = (columnKey) => {
     if (sortColumn === columnKey) {
-      // Toggle direction if same column
       setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
     } else {
-      // New column, default to ascending
       setSortColumn(columnKey)
       setSortDirection('asc')
     }
+    setCurrentPage(1)
   }
   
-  // Pagination logic
-  const totalPages = Math.ceil(sortedOrders.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const displayedOrders = sortedOrders.slice(startIndex, endIndex)
+  // Server-side pagination — total pages from API response
+  const totalPages = Math.max(1, Math.ceil(serverTotalOrders / itemsPerPage))
   
   // Reset to page 1 when items per page changes
   useEffect(() => {
     setCurrentPage(1)
   }, [itemsPerPage])
+
+  // Show loading skeleton when page changes
+  useEffect(() => {
+    if (currentPage !== prevPageRef.current) {
+      setIsPageLoading(true)
+      prevPageRef.current = currentPage
+    }
+  }, [currentPage])
 
   // Close filter dropdown when clicking outside
   useEffect(() => {
@@ -615,7 +592,13 @@ const PendingOrdersPage = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                setShowFilterDropdown(showFilterDropdown === columnKey ? null : columnKey)
+                const opening = showFilterDropdown !== columnKey
+                setShowFilterDropdown(opening ? columnKey : null)
+                if (opening) {
+                  setPendingColumnFilters(prev => ({ ...prev, [columnKey]: columnFilters[columnKey] || [] }))
+                  if (columnKey === 'symbol') fetchSymbols()
+                  if (columnKey === 'login') fetchLogins()
+                }
               }}
               className={`p-1 rounded hover:bg-blue-800/50 transition-colors ${filterCount > 0 ? 'text-yellow-400' : 'text-white/70'}`}
               title="Filter column"
@@ -638,17 +621,22 @@ const PendingOrdersPage = () => {
                   left: (() => {
                     const rect = filterRefs.current[columnKey]?.getBoundingClientRect()
                     if (!rect) return '0px'
-                    // Check if dropdown would go off-screen on the right
-                    const dropdownWidth = 256 // w-64 in pixels
-                    const offset = 30 // Offset to the right to keep filter icon visible
+                    const dropdownWidth = 256
+                    const offset = 30
                     const wouldOverflow = rect.left + offset + dropdownWidth > window.innerWidth
-                    // If would overflow, align to the right edge of the button
                     return wouldOverflow 
                       ? `${rect.right - dropdownWidth}px`
                       : `${rect.left + offset}px`
                   })()
                 }}
                 onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    commitColumnFilters()
+                  }
+                }}
+                tabIndex={0}
               >
                 {/* Header */}
                 <div className="px-1.5 py-0.5 border-b border-gray-200 bg-gray-50 rounded-t">
@@ -727,13 +715,20 @@ const PendingOrdersPage = () => {
                         e.stopPropagation()
                         if (showNumberFilterDropdown === columnKey) {
                           setShowNumberFilterDropdown(null)
-                          setCustomFilterValue1('')
-                          setCustomFilterValue2('')
                         } else {
                           setShowNumberFilterDropdown(columnKey)
                           setCustomFilterColumn(columnKey)
-                          setCustomFilterValue1('')
-                          setCustomFilterValue2('')
+                          // Restore existing filter values if any
+                          const existing = columnFilters[`${columnKey}_number`]
+                          if (existing) {
+                            setCustomFilterType(existing.type || 'equal')
+                            setCustomFilterValue1(existing.value1 != null ? String(existing.value1) : '')
+                            setCustomFilterValue2(existing.value2 != null ? String(existing.value2) : '')
+                          } else {
+                            setCustomFilterType('equal')
+                            setCustomFilterValue1('')
+                            setCustomFilterValue2('')
+                          }
                         }
                       }}
                       className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
@@ -943,13 +938,20 @@ const PendingOrdersPage = () => {
                           e.stopPropagation()
                           if (showNumberFilterDropdown === columnKey) {
                             setShowNumberFilterDropdown(null)
-                            setCustomFilterValue1('')
-                            setCustomFilterValue2('')
                           } else {
                             setShowNumberFilterDropdown(columnKey)
                             setCustomFilterColumn(columnKey)
-                            setCustomFilterValue1('')
-                            setCustomFilterValue2('')
+                            // Restore existing filter values if any
+                            const existing = columnFilters[`${columnKey}_number`]
+                            if (existing) {
+                              setCustomFilterType(existing.type || 'equal')
+                              setCustomFilterValue1(existing.value1 != null ? String(existing.value1) : '')
+                              setCustomFilterValue2(existing.value2 != null ? String(existing.value2) : '')
+                            } else {
+                              setCustomFilterType('equal')
+                              setCustomFilterValue1('')
+                              setCustomFilterValue2('')
+                            }
                           }
                         }}
                         className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all"
@@ -1062,6 +1064,9 @@ const PendingOrdersPage = () => {
                   </div>
                 )}
 
+                {/* Search Box, Select All, Checkbox List — only for symbol/type/login */}
+                {['symbol', 'type', 'login'].includes(columnKey) && (
+                <>
                 {/* Search Box */}
                 <div className="p-2 border-b border-slate-200">
                   <div className="relative">
@@ -1122,7 +1127,7 @@ const PendingOrdersPage = () => {
                         >
                           <input
                             type="checkbox"
-                            checked={(columnFilters[columnKey] || []).includes(value)}
+                            checked={(pendingColumnFilters[columnKey] || []).includes(value)}
                             onChange={(e) => {
                               e.stopPropagation()
                               toggleColumnFilter(columnKey, value)
@@ -1131,27 +1136,15 @@ const PendingOrdersPage = () => {
                             className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
                           />
                           <span className="text-[11px] text-slate-700 truncate">
-                            {columnKey === 'timeSetup' && !isNaN(Number(value)) 
-                              ? (() => {
-                                  const date = new Date(Number(value) * 1000)
-                                  return date.toLocaleString('en-US', {
-                                    year: 'numeric',
-                                    month: '2-digit',
-                                    day: '2-digit',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    second: '2-digit',
-                                    hour12: false
-                                  })
-                                })()
-                              : value
-                            }
+                            {value}
                           </span>
                         </label>
                       ))
                     )}
                   </div>
                 </div>
+                </>
+                )}
 
                 {/* Footer */}
                 <div className="px-3 py-2 border-t border-slate-200 bg-slate-50 rounded-b flex items-center gap-2">
@@ -1167,7 +1160,7 @@ const PendingOrdersPage = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      setShowFilterDropdown(null)
+                      commitColumnFilters()
                     }}
                     className="flex-1 px-3 py-1.5 text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
                   >
@@ -1197,10 +1190,8 @@ const PendingOrdersPage = () => {
     return <PendingOrdersModule />
   }
 
-  // Only show full-page spinner on initial load (no data yet).
-  // Subsequent re-fetches (WebSocket reconnect, lag recovery) keep showing stale data
-  // to avoid a loading flash loop.
-  if (loading.orders && cachedOrders.length === 0) return <LoadingSpinner />
+  // Only show full-page spinner on initial load (before first API response).
+  if (!hasFetchedOrders) return <LoadingSpinner />
 
   return (
     <div className="h-screen flex bg-gradient-to-br from-blue-50 via-white to-blue-50 overflow-hidden">
@@ -1268,17 +1259,17 @@ const PendingOrdersPage = () => {
                 </div>
               </div>
               <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
-                <span>{sortedOrders.length}</span>
+                <span>{serverTotalOrders}</span>
                 <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">ORD</span>
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Unique Logins</span>
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Volume Current</span>
                 <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon('Unique Logins')} 
-                    alt="Unique Logins"
+                    alt="Volume Current"
                     style={{ width: '100%', height: '100%' }}
                     onError={(e) => {
                       e.target.style.display = 'none'
@@ -1287,17 +1278,17 @@ const PendingOrdersPage = () => {
                 </div>
               </div>
               <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
-                <span>{new Set(sortedOrders.map(o=>o.login)).size}</span>
-                <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">ACCT</span>
+                <span>{formatNumber(serverTotals.volumeCurrent, 2)}</span>
+                <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">VOL</span>
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-[#F2F2F7] p-2 hover:md:shadow-md transition-shadow">
               <div className="flex items-start justify-between gap-2 mb-1.5 min-h-[20px]">
-                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Symbols</span>
+                <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider leading-tight flex-1 break-words">Volume Initial</span>
                 <div className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center flex-shrink-0 ml-1">
                   <img 
                     src={getCardIcon('Symbols')} 
-                    alt="Symbols"
+                    alt="Volume Initial"
                     style={{ width: '100%', height: '100%' }}
                     onError={(e) => {
                       e.target.style.display = 'none'
@@ -1306,8 +1297,8 @@ const PendingOrdersPage = () => {
                 </div>
               </div>
               <div className="text-sm md:text-base font-bold text-[#000000] flex items-center gap-1.5 leading-none">
-                <span>{new Set(sortedOrders.map(o=>o.symbol)).size}</span>
-                <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">SYM</span>
+                <span>{formatNumber(serverTotals.volumeInitial, 2)}</span>
+                <span className="text-[10px] md:text-xs font-normal text-[#6B7280]">VOL</span>
               </div>
             </div>
           </div>
@@ -1321,29 +1312,30 @@ const PendingOrdersPage = () => {
                 <div className="flex items-center gap-2 flex-1">
                   {/* Search Bar */}
                   <div className="relative flex-1 max-w-md" ref={searchRef}>
-                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" viewBox="0 0 18 18">
-                      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
+                    <button
+                      onClick={handleSearchClick}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
+                      title="Search"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 18 18">
+                        <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                        <path d="M13 13L16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
+                    </button>
                     <input
                       type="text"
                       value={searchQuery}
-                      onChange={(e) => {
-                        setSearchQuery(e.target.value)
-                        setShowSuggestions(true)
-                        setCurrentPage(1)
-                      }}
-                      onFocus={() => setShowSuggestions(true)}
-                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                      onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyDown={handleSearchKeyDown}
-                      placeholder="Search"
+                      placeholder="Search (press Enter)"
                       className="w-full h-10 pl-10 pr-10 text-sm border border-[#E5E7EB] rounded-lg bg-[#F9FAFB] text-[#1F2937] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     />
                     {searchQuery && (
                       <button
                         onClick={() => {
                           setSearchQuery('')
-                          setShowSuggestions(false)
+                          setActiveSearch('')
+                          setCurrentPage(1)
                         }}
                         className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#4B5563] transition-colors"
                         title="Clear search"
@@ -1352,25 +1344,6 @@ const PendingOrdersPage = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
-                    )}
-                    
-                    {/* Suggestions Dropdown - keep panel visible even with zero results */}
-                    {showSuggestions && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-1 z-50 max-h-60 overflow-y-auto">
-                        {getSuggestions().length > 0 ? (
-                          getSuggestions().map((suggestion, index) => (
-                            <button
-                              key={index}
-                              onClick={() => handleSuggestionClick(suggestion)}
-                              className="w-full text-left px-3 py-2 text-sm text-[#374151] hover:bg-blue-50 transition-colors"
-                            >
-                              {suggestion}
-                            </button>
-                          ))
-                        ) : (
-                          <div className="px-3 py-2 text-sm text-[#6B7280]">No suggestions</div>
-                        )}
-                      </div>
                     )}
                   </div>
                   
@@ -1484,7 +1457,19 @@ const PendingOrdersPage = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
-                    {displayedOrders.length === 0 ? (
+                    {isPageLoading ? (
+                      Array.from({ length: 8 }, (_, i) => (
+                        <tr key={`skeleton-${i}`} className="bg-white border-b border-[#E1E1E1]">
+                          {Object.values(visibleColumns).map((visible, colIdx) => (
+                            visible ? (
+                              <td key={colIdx} className="px-2" style={{ height: '38px' }}>
+                                <div className="h-3 w-full max-w-[80%] bg-gray-200 rounded animate-pulse" />
+                              </td>
+                            ) : null
+                          ))}
+                        </tr>
+                      ))
+                    ) : displayedOrders.length === 0 ? (
                       <tr>
                         <td colSpan={Object.values(visibleColumns).filter(Boolean).length} className="px-4 py-12 text-center text-gray-500">
                           No pending orders
