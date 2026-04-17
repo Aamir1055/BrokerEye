@@ -379,6 +379,12 @@ export const brokerAPI = {
     const response = await api.post('/api/broker/positions/search', params)
     return response.data
   },
+
+  // Get all position symbols
+  getPositionSymbols: async () => {
+    const response = await api.get('/api/broker/positions/symbols')
+    return response.data
+  },
   
   // Get all pending orders
   getOrders: async () => {

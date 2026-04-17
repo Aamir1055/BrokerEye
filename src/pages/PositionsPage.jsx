@@ -332,6 +332,35 @@ const PositionsPage = () => {
 
   // Column filter helper functions
   const getUniqueColumnValues = (columnKey) => {
+    // For symbol column, use server-provided list
+    if (columnKey === 'symbol' && allSymbols.length > 0) {
+      const searchQ = filterSearchQuery[columnKey]?.toLowerCase() || ''
+      if (searchQ) {
+        return allSymbols.filter(s => s.toLowerCase().includes(searchQ))
+      }
+      return allSymbols
+    }
+
+    // For action column, always show all possible values
+    if (columnKey === 'action') {
+      const allActions = ['BUY', 'SELL']
+      const searchQ = filterSearchQuery[columnKey]?.toLowerCase() || ''
+      if (searchQ) {
+        return allActions.filter(a => a.toLowerCase().includes(searchQ))
+      }
+      return allActions
+    }
+
+    // For login column, use all logins from rawClients
+    if (columnKey === 'login' && rawClients.length > 0) {
+      const allLogins = [...new Set(rawClients.map(c => c.login).filter(l => l != null))].sort((a, b) => a - b)
+      const searchQ = filterSearchQuery[columnKey]?.toLowerCase() || ''
+      if (searchQ) {
+        return allLogins.filter(l => String(l).toLowerCase().includes(searchQ))
+      }
+      return allLogins
+    }
+
     const values = new Set()
     const isTimeColumn = columnKey === 'timeUpdate'
     const originalTimestamps = new Map() // Store original timestamps for sorting
@@ -450,11 +479,12 @@ const PositionsPage = () => {
     if (!customFilterColumn || !customFilterValue1) return
 
     const isTextFilter = ['startsWith', 'endsWith', 'contains', 'doesNotContain'].includes(customFilterType)
+    const isStringCol = isStringColumn(customFilterColumn)
     
     const filterConfig = {
       type: customFilterType,
-      value1: isTextFilter ? customFilterValue1 : parseFloat(customFilterValue1),
-      value2: customFilterValue2 ? (isTextFilter ? customFilterValue2 : parseFloat(customFilterValue2)) : null,
+      value1: (isTextFilter || isStringCol) ? customFilterValue1 : parseFloat(customFilterValue1),
+      value2: customFilterValue2 ? ((isTextFilter || isStringCol) ? customFilterValue2 : parseFloat(customFilterValue2)) : null,
       operator: customFilterOperator
     }
 
@@ -555,6 +585,16 @@ const PositionsPage = () => {
   const hasInitialLoad = useRef(false)
   const prevPositionsRef = useRef([])
 
+  // Server-provided symbol list for column filter
+  const [allSymbols, setAllSymbols] = useState([])
+  const fetchSymbols = () => {
+    if (!isAuthenticated) return
+    brokerAPI.getPositionSymbols().then(res => {
+      const symbols = res?.data?.symbols || []
+      if (Array.isArray(symbols)) setAllSymbols(symbols)
+    }).catch((err) => { console.warn('[Symbols] Fetch error:', err?.message) })
+  }
+
     useEffect(() => {
     if (!isAuthenticated || showNetPositions || showClientNet) {
       return
@@ -574,6 +614,57 @@ const PositionsPage = () => {
         }
         if (activeSearch.trim()) {
           params.search = activeSearch.trim()
+        }
+        if (dateFilter) {
+          const now = Math.floor(Date.now() / 1000)
+          const daysInSeconds = dateFilter * 24 * 60 * 60
+          params.dateFrom = now - daysInSeconds
+          params.dateTo = now
+        }
+        // Build server-side filters from column condition filters
+        const apiFilterTypeMap = {
+          startsWith: 'starts_with',
+          endsWith: 'ends_with',
+          contains: 'contain',
+          doesNotContain: 'does_not_contain',
+          equal: 'equal',
+          notEqual: 'not_equal',
+          lessThan: 'less_than',
+          lessThanOrEqual: 'less_than_or_equal',
+          greaterThan: 'greater_than',
+          greaterThanOrEqual: 'greater_than_or_equal'
+        }
+        const apiFilters = []
+        Object.entries(columnFilters).forEach(([key, config]) => {
+          if (!key.endsWith('_number') || !config) return
+          const field = key.replace('_number', '')
+          const operator = apiFilterTypeMap[config.type]
+          if (!operator) return
+          if (config.type === 'between' && config.value2 != null) {
+            apiFilters.push({ field, operator: 'greater_than_or_equal', value: String(config.value1) })
+            apiFilters.push({ field, operator: 'less_than_or_equal', value: String(config.value2) })
+          } else {
+            apiFilters.push({ field, operator, value: String(config.value1) })
+          }
+        })
+        // Add checkbox symbol selections as API filters
+        if (Array.isArray(columnFilters['symbol']) && columnFilters['symbol'].length > 0) {
+          columnFilters['symbol'].forEach(sym => {
+            apiFilters.push({ field: 'symbol', operator: 'equal', value: sym })
+          })
+        }
+        // Add checkbox action selections as API filters
+        if (Array.isArray(columnFilters['action']) && columnFilters['action'].length > 0) {
+          columnFilters['action'].forEach(act => {
+            apiFilters.push({ field: 'action', operator: 'equal', value: act })
+          })
+        }
+        if (apiFilters.length > 0) {
+          params.filters = apiFilters
+        }
+        // Add login checkbox selections as mt5Accounts param
+        if (Array.isArray(columnFilters['login']) && columnFilters['login'].length > 0) {
+          params.mt5Accounts = columnFilters['login'].map(Number)
         }
 
         const response = await brokerAPI.searchPositions(params)
@@ -620,7 +711,7 @@ const PositionsPage = () => {
         flashTimeouts.current.clear()
       } catch {}
     }
-  }, [isAuthenticated, showNetPositions, showClientNet, currentPage, itemsPerPage, sortColumn, sortDirection, activeSearch])
+  }, [isAuthenticated, showNetPositions, showClientNet, currentPage, itemsPerPage, sortColumn, sortDirection, activeSearch, dateFilter, columnFilters])
 
   // REST polling for NET positions (netPosition: true) when NET tab is active
   useEffect(() => {
@@ -1227,40 +1318,6 @@ const PositionsPage = () => {
     setCurrentPage(1)
   }
 
-  // Sorting function with type detection
-  const sortPositions = (positionsToSort) => {
-    if (!sortColumn) return positionsToSort
-    
-    const sorted = [...positionsToSort].sort((a, b) => {
-      const aVal = a[sortColumn]
-      const bVal = b[sortColumn]
-      
-      // Handle null/undefined values
-      if (aVal == null && bVal == null) return 0
-      if (aVal == null) return 1
-      if (bVal == null) return -1
-      
-      // Detect data type and sort accordingly
-      // Check if it's a number (including volume, prices, profit, etc.)
-      const aNum = Number(aVal)
-      const bNum = Number(bVal)
-      if (!isNaN(aNum) && !isNaN(bNum)) {
-        return sortDirection === 'asc' ? aNum - bNum : bNum - aNum
-      }
-      
-      // Default to string comparison (for login, symbol, action, etc.)
-      const aStr = String(aVal).toLowerCase()
-      const bStr = String(bVal).toLowerCase()
-      if (sortDirection === 'asc') {
-        return aStr.localeCompare(bStr)
-      } else {
-        return bStr.localeCompare(aStr)
-      }
-    })
-    
-    return sorted
-  }
-  
   // Defer heavy list processing so route changes remain responsive
   const deferredPositions = useDeferredValue(displayPositions)
 
@@ -1280,26 +1337,14 @@ const PositionsPage = () => {
     // Apply group filter on top of IB filter
     ibFiltered = filterByActiveGroup(ibFiltered, 'login', 'positions')
     
-    // Apply date filter if selected
-    if (dateFilter) {
-      const now = Date.now() / 1000
-      const daysInSeconds = dateFilter * 24 * 60 * 60
-      const cutoffTime = now - daysInSeconds
-      
-      ibFiltered = ibFiltered.filter(pos => {
-        const timeValue = pos.timeUpdate || pos.timeCreate
-        return timeValue && timeValue >= cutoffTime
-      })
-    }
-    
-    // Apply column filters (checkbox + number/text condition filters)
+    // Apply column filters (checkbox filters only — condition filters handled by API)
     Object.entries(columnFilters).forEach(([columnKey, values]) => {
       if (columnKey.endsWith('_number')) {
-        const actualColumnKey = columnKey.replace('_number', '')
-        ibFiltered = ibFiltered.filter(position => {
-          const positionValue = position[actualColumnKey]
-          return matchesNumberFilter(positionValue, values)
-        })
+        // Condition filters are now handled server-side via API filters[]
+        return
+      } else if (columnKey === 'symbol' || columnKey === 'action' || columnKey === 'login') {
+        // Symbol, action, and login checkbox filters are now handled server-side via API
+        return
       } else if (values && values.length > 0) {
         ibFiltered = ibFiltered.filter(position => {
           let positionValue = position[columnKey]
@@ -1315,7 +1360,7 @@ const PositionsPage = () => {
     })
     
     return { sortedPositions: ibFiltered, ibFilteredPositions: ibFiltered }
-  }, [deferredPositions, columnFilters, isAuthenticated, filterByActiveGroup, activeGroupFilters, filterByActiveIB, selectedIB, ibMT5Accounts, dateFilter])
+  }, [deferredPositions, columnFilters, isAuthenticated, filterByActiveGroup, activeGroupFilters, filterByActiveIB, selectedIB, ibMT5Accounts])
 
   // Memoized summary statistics - use server-provided totals across ALL positions
   const summaryStats = useMemo(() => {
@@ -1708,7 +1753,10 @@ const PositionsPage = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                setShowFilterDropdown(showFilterDropdown === columnKey ? null : columnKey)
+                const opening = showFilterDropdown !== columnKey
+                setShowFilterDropdown(opening ? columnKey : null)
+                if (opening && columnKey === 'symbol') fetchSymbols()
+                // No extra fetch needed for login — uses rawClients from DataContext
               }}
               className={`p-1 rounded hover:bg-blue-800/50 transition-colors ${filterCount > 0 ? 'text-yellow-400' : 'text-white/70'}`}
               title="Filter column"
@@ -1766,11 +1814,11 @@ const PositionsPage = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleSort(columnKey, 'asc')
+                      tc.handleSortFn(columnKey, 'asc')
                       setShowFilterDropdown(null)
                     }}
                     className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded hover:bg-gray-200 ${
-                      sortColumn === columnKey && sortDirection === 'asc' ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
+                      tc.sortCol === columnKey && tc.sortDir === 'asc' ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1781,11 +1829,11 @@ const PositionsPage = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleSort(columnKey, 'desc')
+                      tc.handleSortFn(columnKey, 'desc')
                       setShowFilterDropdown(null)
                     }}
                     className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded hover:bg-gray-200 mt-1 ${
-                      sortColumn === columnKey && sortDirection === 'desc' ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
+                      tc.sortCol === columnKey && tc.sortDir === 'desc' ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1800,7 +1848,15 @@ const PositionsPage = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      clearColumnFilter(columnKey)
+                      // Clear filter for this column using the tab-specific filter state
+                      tc.setFilters(prev => {
+                        const numberFilterKey = `${columnKey}_number`
+                        const { [columnKey]: _, [numberFilterKey]: __, ...rest } = prev
+                        return rest
+                      })
+                      setFilterSearchQuery(prev => { const { [columnKey]: _, ...rest } = prev; return rest })
+                      setShowFilterDropdown(null)
+                      tc.setPage(1)
                     }}
                     className="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                   >
@@ -1814,8 +1870,7 @@ const PositionsPage = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleSort(columnKey)
-                      setSortDirection('asc')
+                      tc.handleSortFn(columnKey, 'asc')
                     }}
                     className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
                   >
@@ -1827,8 +1882,7 @@ const PositionsPage = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleSort(columnKey)
-                      setSortDirection('desc')
+                      tc.handleSortFn(columnKey, 'desc')
                     }}
                     className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
                   >
@@ -2187,7 +2241,8 @@ const PositionsPage = () => {
                   </div>
                 )}
 
-                {/* Search Box */}
+                {/* Search Box + Checkbox list — only for symbol and action columns */}
+                {(columnKey === 'symbol' || columnKey === 'action' || columnKey === 'login') && <>
                 <div className="p-2 border-b border-slate-200">
                   <div className="relative">
                     <input
@@ -2263,6 +2318,7 @@ const PositionsPage = () => {
                     )}
                   </div>
                 </div>
+                </>}
 
                 {/* Footer */}
                 <div className="px-3 py-2 border-t border-slate-200 bg-slate-50 rounded-b flex items-center gap-2">
@@ -3600,10 +3656,7 @@ const PositionsPage = () => {
                                   </td>
                                 )}
                                 {clientNetVisibleColumns.symbol && (<td className="px-2 py-1.5 text-sm font-medium text-gray-900 whitespace-nowrap">
-                                  {row.symbol}
-                                  {groupByBaseSymbol && row.variantCount > 1 && (
-                                    <span className="ml-2 text-[11px] text-gray-500">(+{row.variantCount - 1} variants)</span>
-                                  )}
+                                  {groupByBaseSymbol ? (row.symbol || '').split(/[.\-]/)[0] : row.symbol}
                                 </td>)}
                                 {clientNetVisibleColumns.netType && (<td className="px-2 py-1.5 text-sm whitespace-nowrap">
                                   <span className={`px-2 py-0.5 text-xs font-medium rounded ${row.netType === 'Buy' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>{row.netType}</span>
@@ -3615,43 +3668,8 @@ const PositionsPage = () => {
                                 </td>)}
                                 {clientNetVisibleColumns.totalPositions && (<td className="px-2 py-1.5 text-sm text-gray-900 whitespace-nowrap tabular-nums">
                                   {row.totalPositions ?? '-'}
-                                  {groupByBaseSymbol && row.variantCount > 1 && (
-                                    <button
-                                      className="ml-3 text-xs text-blue-600 hover:underline"
-                                      onClick={() => {
-                                        const next = new Set(expandedNetKeys)
-                                        const ek = `client|${key}`
-                                        if (next.has(ek)) next.delete(ek); else next.add(ek)
-                                        setExpandedNetKeys(next)
-                                      }}
-                                    >
-                                      {expandedNetKeys.has(`client|${key}`) ? 'Hide variants' : 'Show variants'}
-                                    </button>
-                                  )}
                                 </td>)}
                               </tr>
-                              {groupByBaseSymbol && expandedNetKeys.has(`client|${key}`) && row.variants && row.variants.length > 0 && (
-                                <tr className="bg-gray-50">
-                                  <td colSpan={Object.values(clientNetVisibleColumns).filter(Boolean).length} className="px-3 py-2">
-                                    <div className="text-[12px] text-gray-700 font-medium mb-1">Variants</div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                                      {row.variants.map((v, i) => (
-                                        <div key={i} className="border border-gray-200 rounded p-2 bg-white">
-                                          <div className="flex items-center justify-between">
-                                            <div className="font-semibold text-gray-900">{v.exactSymbol}</div>
-                                            <span className={`px-2 py-0.5 text-[11px] font-medium rounded ${v.netType === 'Buy' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>{v.netType}</span>
-                                          </div>
-                                          <div className="mt-1 text-[12px] text-gray-600 flex gap-4">
-                                            <div>NET Vol: <span className="font-semibold text-gray-900">{formatNumber(v.netVolume, 2)}</span></div>
-                                            <div>Avg: <span className="font-semibold text-gray-900">{formatNumber(v.avgPrice, 5)}</span></div>
-                                            <div>P/L: <span className={`font-semibold ${v.totalProfit>=0?'text-green-700':'text-red-700'}`}>{formatNumber(v.totalProfit, 2)}</span></div>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </td>
-                                </tr>
-                              )}
                             </Fragment>
                           )
                         })}
@@ -4025,6 +4043,7 @@ const PositionsPage = () => {
         onClose={() => setIsDateFilterOpen(false)}
         onApply={(days) => {
           setDateFilter(days)
+          setCurrentPage(1)
           setIsDateFilterOpen(false)
         }}
         currentFilter={dateFilter}
