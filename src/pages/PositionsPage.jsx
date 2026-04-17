@@ -267,7 +267,7 @@ const PositionsPage = () => {
   }
 
   // Define string columns that should not show number filters
-  const stringColumns = ['symbol', 'action', 'reason', 'comment']
+  const stringColumns = ['symbol', 'action', 'reason', 'comment', 'login']
   const isStringColumn = (key) => stringColumns.includes(key)
 
   // Column filter states
@@ -295,6 +295,8 @@ const PositionsPage = () => {
   // Pagination states for ALL positions view
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(() => isMobile ? 12 : 25)
+  const [isPageLoading, setIsPageLoading] = useState(false)
+  const prevPageRef = useRef(currentPage)
   
   // NET positions toggle and grouping
   const [showNetPositions, setShowNetPositions] = useState(false)
@@ -595,6 +597,14 @@ const PositionsPage = () => {
     }).catch((err) => { console.warn('[Symbols] Fetch error:', err?.message) })
   }
 
+  // Show loading skeleton when page changes
+  useEffect(() => {
+    if (currentPage !== prevPageRef.current) {
+      setIsPageLoading(true)
+      prevPageRef.current = currentPage
+    }
+  }, [currentPage])
+
     useEffect(() => {
     if (!isAuthenticated || showNetPositions || showClientNet) {
       return
@@ -659,12 +669,14 @@ const PositionsPage = () => {
             apiFilters.push({ field: 'action', operator: 'equal', value: act })
           })
         }
+        // Add login checkbox selections as API filters
+        if (Array.isArray(columnFilters['login']) && columnFilters['login'].length > 0) {
+          columnFilters['login'].forEach(login => {
+            apiFilters.push({ field: 'login', operator: 'equal', value: Number(login) })
+          })
+        }
         if (apiFilters.length > 0) {
           params.filters = apiFilters
-        }
-        // Add login checkbox selections as mt5Accounts param
-        if (Array.isArray(columnFilters['login']) && columnFilters['login'].length > 0) {
-          params.mt5Accounts = columnFilters['login'].map(Number)
         }
 
         const response = await brokerAPI.searchPositions(params)
@@ -676,6 +688,7 @@ const PositionsPage = () => {
           setPolledPositions(data)
           setServerTotalPositions(total)
           if (totals) setServerTotals(totals)
+          setIsPageLoading(false)
         }
       } catch (err) {
         if (!isCancelled) {
@@ -750,9 +763,10 @@ const PositionsPage = () => {
             })
           }
           // Map API fields to UI field names
+          // When groupBaseSymbol is true, API returns 'baseSymbol' instead of 'symbol'
           const mapped = data.map(item => ({
-            symbol: item.symbol,
-            netType: item.action === 'BUY' ? 'Buy' : item.action === 'SELL' ? 'Sell' : (item.action || 'Flat'),
+            symbol: item.symbol || item.baseSymbol,
+            netType: item.action === 'BUY' ? 'Buy' : item.action === 'SELL' ? 'Sell' : (item.action === 'FLAT' ? 'Flat' : (item.action || 'Flat')),
             netVolume: item.netVolume || 0,
             avgPrice: item.avgPrice || 0,
             totalProfit: item.totalProfit || 0,
@@ -763,7 +777,7 @@ const PositionsPage = () => {
             variantCount: item.variants?.length || 1,
             variants: (item.variants || []).map(v => ({
               exactSymbol: v.symbol || v.exactSymbol,
-              netType: v.action === 'BUY' ? 'Buy' : v.action === 'SELL' ? 'Sell' : (v.action || 'Flat'),
+              netType: v.action === 'BUY' ? 'Buy' : v.action === 'SELL' ? 'Sell' : (v.action === 'FLAT' ? 'Flat' : (v.action || 'Flat')),
               netVolume: v.netVolume || 0,
               avgPrice: v.avgPrice || 0,
               totalProfit: v.totalProfit || 0,
@@ -1814,11 +1828,11 @@ const PositionsPage = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      tc.handleSortFn(columnKey, 'asc')
+                      handleSort(columnKey, 'asc')
                       setShowFilterDropdown(null)
                     }}
                     className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded hover:bg-gray-200 ${
-                      tc.sortCol === columnKey && tc.sortDir === 'asc' ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
+                      sortColumn === columnKey && sortDirection === 'asc' ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1829,11 +1843,11 @@ const PositionsPage = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      tc.handleSortFn(columnKey, 'desc')
+                      handleSort(columnKey, 'desc')
                       setShowFilterDropdown(null)
                     }}
                     className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded hover:bg-gray-200 mt-1 ${
-                      tc.sortCol === columnKey && tc.sortDir === 'desc' ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
+                      sortColumn === columnKey && sortDirection === 'desc' ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1848,15 +1862,7 @@ const PositionsPage = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      // Clear filter for this column using the tab-specific filter state
-                      tc.setFilters(prev => {
-                        const numberFilterKey = `${columnKey}_number`
-                        const { [columnKey]: _, [numberFilterKey]: __, ...rest } = prev
-                        return rest
-                      })
-                      setFilterSearchQuery(prev => { const { [columnKey]: _, ...rest } = prev; return rest })
-                      setShowFilterDropdown(null)
-                      tc.setPage(1)
+                      clearColumnFilter(columnKey)
                     }}
                     className="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                   >
@@ -1870,7 +1876,8 @@ const PositionsPage = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      tc.handleSortFn(columnKey, 'asc')
+                      handleSort(columnKey)
+                      setSortDirection('asc')
                     }}
                     className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
                   >
@@ -1882,7 +1889,8 @@ const PositionsPage = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      tc.handleSortFn(columnKey, 'desc')
+                      handleSort(columnKey)
+                      setSortDirection('desc')
                     }}
                     className="w-full px-3 py-1.5 text-left text-[11px] font-medium hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-colors"
                   >
@@ -3888,7 +3896,19 @@ const PositionsPage = () => {
                   )}
 
                   <tbody className="bg-white divide-y divide-gray-100">
-                    {displayedPositions.length === 0 && !isInitialPositionsLoading ? (
+                    {isPageLoading ? (
+                      Array.from({ length: 8 }, (_, i) => (
+                        <tr key={`skeleton-${i}`} className="bg-white border-b border-[#E1E1E1]">
+                          {Object.values(getEffectiveVisibleColumns()).map((visible, colIdx) => (
+                            visible ? (
+                              <td key={colIdx} className="px-2" style={{ height: '38px' }}>
+                                <div className="h-3 w-full max-w-[80%] bg-gray-200 rounded animate-pulse" />
+                              </td>
+                            ) : null
+                          ))}
+                        </tr>
+                      ))
+                    ) : displayedPositions.length === 0 && !isInitialPositionsLoading ? (
                       <tr>
                         <td colSpan={Object.values(getEffectiveVisibleColumns()).filter(v => v).length} className="px-4 py-12 text-center text-gray-500">
                           No open positions
